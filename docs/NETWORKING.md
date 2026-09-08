@@ -2,9 +2,13 @@
 
 ## Anteprima privata
 
-Le porte 8000 (HTTP statico) e 8001 (WebSocket signaling) ascoltano su 0.0.0.0. Nel browser remoto si usano gli URL inoltrati HTTPS/WSS, non il suo localhost. Il client deriva il dominio della porta 8001 sostituendo `-8000.` nell'host Codespaces; per altri hosting modificare il campo endpoint prima di creare/entrare. La build desktop legge `SIGNALING_URL`, con fallback localhost soltanto per sviluppo locale.
+La porta 8000 serve la build e un proxy WebSocket sul percorso `/signaling`. Il servizio lobby rimane un processo separato su 8001. Entrambi ascoltano su 0.0.0.0; il browser usa `wss://<host-del-gioco>/signaling`, il proxy raggiunge `ws://127.0.0.1:8001` dal Codespace. Nessun localhost del tester e nessun cookie GitHub inoltrato al servizio interno. Il percorso del combattimento resta WebRTC P2P, non passa dal proxy.
 
-In Codespaces aprire il pannello Ports, aggiungere 8000 e 8001 se assenti, mantenere la visibilità Private. Prima aprire in ogni browser l'URL HTTPS della 8001 e completare l'autenticazione GitHub; deve apparire `Fatal Kombat signaling ready`. Poi aprire la 8000. Il WebSocket non può presentare una schermata di login interattiva: un redirect di autenticazione si manifesta come errore di connessione.
+In Codespaces mantenere visibilità Private. Per il browser basta inoltrare/aprire la 8000 e completare l'accesso GitHub in ciascun browser. La precedente build usava direttamente il dominio della 8001: aprire la pagina HTTP di quel dominio non prova l'upgrade WebSocket da un'altra origine. Il proxy elimina tale dipendenza; non è una prova che questa fosse l'unica causa del problema sul Mac dell'utente. Il titolo NETWORK LAB 01.1 identifica la build aggiornata; risposte statiche `Cache-Control: no-store` evitano cache obsolete. Non pubblicata alcuna porta.
+
+La build desktop legge `SIGNALING_URL` e può usare lo stesso URL WSS con `/signaling`, oppure direttamente la 8001 quando accessibile; il fallback localhost vale solo per sviluppo locale.
+
+Messaggi diagnostici: apertura WebSocket (timeout 15 s), richiesta lobby dopo apertura (timeout 10 s), lobby connessa, negoziazione WebRTC. Le chiusure indicano fase e codice; il codice 1011 del proxy indica un problema del servizio a monte, mentre una chiusura anomala prima dell'apertura non identifica da sola la causa. Un controllo HTTP “ready” non sostituisce un test WebSocket. Tenere entrambe le finestre visibili per evitare sospensione del ciclo Godot in background ([documentazione Godot](https://docs.godotengine.org/en/4.5/tutorials/export/exporting_for_web.html#background-processing)).
 
 L'accesso al repository non garantisce l'accesso al forwarding privato del proprietario. Un tester senza accesso al Codespace può essere bloccato prima di raggiungere la lobby. Non abbiamo reso pubbliche le porte né distribuito servizi esterni. Per amici esterni servirà una decisione esplicita: autorizzare la visibilità di test o distribuire HTTPS/WSS su hosting autorizzato. Il codice invito non supera le restrizioni di accesso GitHub.
 

@@ -39,7 +39,7 @@ func _ready() -> void:
 	panel.add_theme_constant_override("separation", 10)
 	add_child(panel)
 	var title := Label.new()
-	title.text = "FATAL KOMBAT   /   NETWORK LAB 01"
+	title.text = "FATAL KOMBAT   /   NETWORK LAB 01.1"
 	title.add_theme_font_size_override("font_size", 30)
 	panel.add_child(title)
 	var subtitle := Label.new()
@@ -48,7 +48,7 @@ func _ready() -> void:
 	endpoint.placeholder_text = "Endpoint signaling wss://…"
 	endpoint.text = "ws://127.0.0.1:8001"
 	if OS.has_feature("web"):
-		endpoint.text = str(JavaScriptBridge.eval("location.protocol === 'https:' ? 'wss://' + location.host.replace('-8000.', '-8001.') : 'ws://' + location.hostname + ':8001'"))
+		endpoint.text = str(JavaScriptBridge.eval("(location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/signaling'"))
 	else:
 		var configured: String = OS.get_environment("SIGNALING_URL")
 		if not configured.is_empty():

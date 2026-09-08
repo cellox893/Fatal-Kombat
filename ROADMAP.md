@@ -4,6 +4,10 @@
 
 Implementazione sospesa su richiesta dell’utente per salvare il lavoro. Build e test terminati; preview 8000 e signaling 8001 lasciati attivi. Nessuna nuova funzionalità nel turno di checkpoint. M0 ha una base tecnica verificata sulla stessa macchina, ma resta aperta fino ai collaudi reali.
 
+## Correzione accesso signaling — 2026-09-08
+
+Proxy WebSocket sulla stessa origine della preview, servizio lobby ancora separato su 8001; messaggi distinti per apertura, attesa risposta lobby e chiusura con codice. Corretto lo stato “connessione…” che restava mostrato dopo ingresso nella stanza. Collaudo sul browser reale dell’utente ancora necessario.
+
 ## M0 — laboratorio tecnico (sessione iniziale)
 
 - [x] Ambiente riproducibile Godot/template e dipendenze native fissate.

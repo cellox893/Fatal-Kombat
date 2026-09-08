@@ -53,3 +53,20 @@ Checksum del replay di riferimento: `556df070167ad8eb7b20eb82f2939a78cf4cd912d2b
 ## Ripresa
 
 Seguire README.md per avvio e test. Prima di dichiarare M0 validata multi-rete, completare accessi e STUN/TURN e misurare il Mac. Prossima implementazione pianificata: M1 della ROADMAP, senza avviarla nel checkpoint.
+
+## Correzione signaling successiva al checkpoint — 2026-09-08
+
+Segnalazione utente: P1 fermo su “Connessione al signaling…”, P2 disconnesso, anche dopo accesso HTTP alla 8001. Il servizio locale rispondeva sia HTTP sia WebSocket. Non è stato possibile ispezionare la sessione autenticata o il browser reale dell'utente; causa del rifiuto sul suo dispositivo non accertata.
+
+Corretto un difetto verificato nel codice: il messaggio di connessione rimaneva invariato dopo la ricezione della stanza. Ora mostra “Lobby connessa”. Aggiunto timeout per risposta lobby mancante dopo apertura WebSocket, oltre al timeout di apertura; chiusure con fase e codice. Preview migrata da Python HTTP a Node con proxy `/signaling` sulla stessa origine 8000, per eliminare la dipendenza dall'accesso WebSocket fra due domini privati. Il servizio lobby 8001 resta separato e non è stato riavviato. Porte ancora private, nessuno STUN/TURN aggiunto.
+
+Verifiche della correzione:
+
+- `scripts/test.sh`: passata, inclusi tre test Node (lobby; preview/proxy con creazione e ingresso; backend indisponibile con codice 1011), suite deterministica e WebRTC nativo.
+- `scripts/build.sh`: nuova build web NETWORK LAB 01.1 esportata.
+- `tests/browser/smoke.mjs`: due Chromium sulla stessa macchina attraverso proxy, scambio input, rollback osservato e disconnessione passati, desync 0.
+- `tests/browser/cross-platform.mjs`: web attraverso proxy e Linux nativo diretto al servizio, confermato 182, desync 0.
+- `tests/browser/signaling-errors.mjs`: risposte WebSocket simulate nel browser; Godot segnala timeout quando il canale apre ma la lobby tace, e segnala codice 1011 quando chiuso. Non è un test di autenticazione del forwarding GitHub.
+- Risposta HTTP preview controllata: `Cache-Control: no-store`.
+
+La preview attiva è ora `node services/signaling/preview.mjs` su 8000; `node server.mjs` continua su 8001. Build desktop generate al checkpoint non rigenerate con questa correzione: il codice nativo aggiornato è stato eseguito nel test browser/Linux. Necessario riprovare sul Mac dell'utente con due finestre visibili. TURN, reti reali e FPS rimangono non validati.

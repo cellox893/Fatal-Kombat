@@ -7,6 +7,7 @@
 - `game/network/rollback.gd`: snapshot profondi, predizione del movimento remoto (non dei pulsanti), correzione e risimulazione; nessun effetto di presentazione.
 - `game/network/transport.gd`: WebSocket di signaling, WebRTCDataChannel negoziato ID 1, non ordinato senza ritrasmissioni SCTP; RTT applicativo ping/pong.
 - `game/presentation`: menu, campionamento tastiera, vista procedurale, telemetria. È ancora un controller di laboratorio: input e ciclo round verranno estratti prima del combattimento completo. Unico punto browser-specifico: rilevamento endpoint e telemetria test `window.fatalLab`.
+- `services/signaling/preview.mjs`: serve la build web su 8000 e inoltra `/signaling` al processo 8001. Stessa origine della pagina per WSS, senza inoltrare credenziali browser; coda e backpressure limitate. Non trasporta input di combattimento.
 - `services/signaling`: Node/ws, stato volatile delle stanze, versione, pronto, inoltro SDP/ICE. Non esegue combattimento e non è autorevole.
 
 ## Protocollo lab-1

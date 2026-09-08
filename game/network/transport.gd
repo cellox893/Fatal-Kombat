@@ -18,6 +18,9 @@ var last_packet: int = 0
 var rtt: int = 0
 var ping_at: int = 0
 var request: Dictionary = {}
+var signaling_opened: bool = false
+var awaiting_room: bool = false
+var room_requested_at: int = 0
 
 func enter(endpoint: String, code: String) -> void:
 	if active:
@@ -46,15 +49,25 @@ func _process(_delta: float) -> void:
 		return
 	socket.poll()
 	if socket.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		if not signaling_opened:
+			signaling_opened = true
+			status.emit("WebSocket aperto · richiesta alla lobby…")
 		if not request.is_empty():
-			send_signal(request)
+			var send_error: Error = socket.send_text(JSON.stringify(request))
+			if send_error != OK:
+				_fail("Invio alla lobby fallito: " + error_string(send_error))
+				return
+			awaiting_room = true
+			room_requested_at = Time.get_ticks_msec()
 			request = {}
 		while socket.get_available_packet_count() > 0:
 			var data: Variant = JSON.parse_string(socket.get_packet().get_string_from_utf8())
 			if data is Dictionary:
 				_handle_signal(data)
 	elif socket.get_ready_state() == WebSocketPeer.STATE_CLOSED:
-		_fail("Signaling disconnesso. Controlla URL e accesso alla porta 8001, poi ricarica.")
+		var close_code: int = socket.get_close_code()
+		var stage: String = "dopo apertura" if signaling_opened else "prima dell’apertura"
+		_fail("Signaling chiuso %s (codice %d). Ricarica il gioco; se persiste, comunica questo messaggio." % [stage, close_code])
 		return
 	if peer:
 		peer.poll()
@@ -82,16 +95,22 @@ func _process(_delta: float) -> void:
 		_fail("Timeout: nessun pacchetto dal peer per 5 secondi. Ricarica per riprovare.")
 	elif peer and not opened and Time.get_ticks_msec() - started_at > 30000:
 		_fail("Timeout WebRTC: potrebbe servire un relay TURN.")
-	elif not request.is_empty() and Time.get_ticks_msec() - started_at > 15000:
-		_fail("Timeout signaling: apri prima l’URL HTTPS della porta 8001.")
+	elif not signaling_opened and Time.get_ticks_msec() - started_at > 15000:
+		_fail("Timeout apertura WebSocket (15 s). Verifica accesso all’URL del gioco e rete.")
+	elif awaiting_room and Time.get_ticks_msec() - room_requested_at > 10000:
+		_fail("WebSocket aperto, ma la lobby non risponde (10 s). Comunica questo messaggio.")
 
 func _handle_signal(data: Dictionary) -> void:
 	match str(data.get("type", "")):
 		"error":
+			awaiting_room = false
 			status.emit(str(data.message))
 			if opened:
 				_fail(str(data.message))
 		"room":
+			awaiting_room = false
+			if not peer:
+				status.emit("Lobby connessa · scegli il personaggio e premi Pronto in entrambe le finestre.")
 			slot = int(data.slot)
 			ice_servers = data.iceServers
 			room_updated.emit(data)

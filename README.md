@@ -4,9 +4,9 @@ Prototipo di picchiaduro storico 2D online in Godot. Questa prima milestone è u
 
 ## Aprire l'anteprima nel Codespace attuale
 
-1. Apri prima [signaling HTTPS, porta 8001](https://humble-carnival-5649pq6qvxf79xr-8001.app.github.dev) e completa l'accesso GitHub. Deve apparire `Fatal Kombat signaling ready`.
-2. Apri [Fatal Kombat, porta 8000](https://humble-carnival-5649pq6qvxf79xr-8000.app.github.dev). Se il Codespace cambia nome, usa gli URL nel pannello **Ports**.
-3. Primo client: **Crea stanza privata**, copia il codice mostrato. Secondo client, altra finestra/browser: inserisci il codice e premi **Entra**. Scegli Leonida o Tesla su ciascun client, poi entrambi **Pronto**.
+1. Apri [Fatal Kombat, porta 8000](https://humble-carnival-5649pq6qvxf79xr-8000.app.github.dev) e completa l'eventuale accesso GitHub **in ciascun browser**. Se il Codespace cambia nome, usa l'URL nel pannello **Ports**.
+2. Verifica il titolo **NETWORK LAB 01.1**; dopo un aggiornamento ricarica entrambe le finestre. Il campo endpoint deve finire con **`-8000.app.github.dev/signaling`**. Il browser ora usa un solo dominio: non è più necessario autenticarsi separatamente sulla 8001.
+3. Primo client: **Crea stanza privata**, copia il codice mostrato. Secondo client, altra finestra/browser: inserisci il codice e premi **Entra**. Scegli Leonida o Tesla su ciascun client, poi entrambi **Pronto**. Usa due finestre **affiancate e visibili**, non schede nascoste: il browser può sospendere l'elaborazione Godot in background.
 4. Attendi `WebRTC connesso`. Clicca l'arena per togliere il focus dai campi. **A/D o frecce**: movimento, **spazio**: salto; **H**: rettangoli diagnostici provvisori. Il peer deve vedere gli stessi movimenti. Tick e confermato avanzano, RTT si aggiorna, desync deve restare 0. I tick correnti dei due client possono differire: i checksum vengono confrontati solo a tick confermati uguali.
 5. Chiudi un client: l'altro deve segnalare la disconnessione e fermarsi. Per una nuova stanza ricarica entrambi. Non c'è ancora rivincita.
 
@@ -29,7 +29,7 @@ In un secondo terminale:
 npm start --prefix services/signaling  # 0.0.0.0:8001
 ```
 
-Per STUN/TURN usare `.env` come descritto in [NETWORKING](docs/NETWORKING.md). Nel pannello Ports inoltrare entrambe le porte. Il campo signaling della build web deriva automaticamente **WSS della porta 8001** dall'URL HTTPS del Codespace: non tenta localhost del tester remoto. Se gli URL non seguono il formato Codespaces, incollare manualmente l'endpoint corretto.
+Per STUN/TURN usare `.env` come descritto in [NETWORKING](docs/NETWORKING.md). Per il browser basta inoltrare la porta 8000: il campo signaling deriva **WSS dello stesso host con percorso `/signaling`**. Il server di preview inoltra quel WebSocket al servizio separato 8001, internamente al Codespace. La 8001 rimane utilizzabile direttamente per diagnostica o client desktop; non deve essere aperta dal tester web. Per hosting diverso configurare lo stesso proxy oppure impostare esplicitamente un endpoint raggiungibile.
 
 I processi della sessione possono terminare quando il Codespace viene sospeso: riavviare i due comandi server. Non sono servizi persistenti.
 
@@ -44,6 +44,7 @@ npm ci --prefix tests/browser
 npx --prefix tests/browser playwright install --with-deps chromium
 node tests/browser/smoke.mjs
 node tests/browser/cross-platform.mjs
+node tests/browser/signaling-errors.mjs
 ```
 
 Il primo usa due contesti Chromium, il secondo un Chromium e un processo Godot Linux nativo. Non sono test fra due dispositivi fisici. Screenshot generati in `build/`, ignorati da Git. Dettaglio risultati e limiti: [VALIDATION](docs/VALIDATION.md).
