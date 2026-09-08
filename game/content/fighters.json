@@ -1,0 +1,1 @@
+{"arena":{"id":"observatory","left":70,"right":1050,"floor":550},"fighters":[{"id":"leonidas","label":"LEONIDA","speed":4,"jump":-16,"health":100,"color":"dfad61"},{"id":"tesla","label":"NIKOLA TESLA","speed":5,"jump":-17,"health":100,"color":"63dce8"}]}

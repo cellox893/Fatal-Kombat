@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {once} from 'node:events';
+import {WebSocket} from 'ws';
+import {createSignaling} from './server.mjs';
+test('private room, version gate, ready, relay, full room and disconnect', async () => {
+ const app=createSignaling({port:0,host:'127.0.0.1'});
+ await once(app.server,'listening');
+ const clients=[];
+ async function connect(){const ws=new WebSocket(`ws://127.0.0.1:${app.server.address().port}`);clients.push(ws);await once(ws,'open');return ws;}
+ const request=async(ws,m)=>{const result=once(ws,'message');ws.send(JSON.stringify(m));return JSON.parse((await result)[0]);};
+ try {
+  const a=await connect(), b=await connect(), c=await connect();
+  const room=await request(a,{type:'create',version:'lab'}); assert.match(room.code,/^[A-F0-9]{8}$/);
+  assert.equal((await request(b,{type:'join',code:room.code,version:'wrong'})).type,'error');
+  assert.equal((await request(b,{type:'join',code:room.code,version:'lab'})).slot,1);
+  assert.equal((await request(c,{type:'join',code:room.code,version:'lab'})).message,'Stanza piena');
+  await request(a,{type:'ready',character:'leonidas',ready:true});
+  const connected= new Promise(resolve=>a.on('message',raw=>{const m=JSON.parse(raw);if(m.type==='connect') resolve(m);}));
+  await request(b,{type:'ready',character:'tesla',ready:true});await connected;
+  const relayed=new Promise(resolve=>b.on('message',raw=>{const m=JSON.parse(raw);if(m.type==='sdp') resolve(m);}));a.send(JSON.stringify({type:'sdp',kind:'offer',sdp:'test'}));
+  assert.equal((await relayed).sdp,'test');
+  const closed=once(a,'message'); b.close();assert.match(JSON.parse((await closed)[0]).message,/disconnesso/);
+ } finally {clients.forEach(c=>c.terminate());app.close();}
+});

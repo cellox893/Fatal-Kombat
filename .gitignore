@@ -1,0 +1,11 @@
+.tools/
+.downloads/
+build/
+node_modules/
+.env
+.env.*
+!.env.example
+game/.godot/
+game/webrtc/
+*.log
+game/addons/webrtc_native/

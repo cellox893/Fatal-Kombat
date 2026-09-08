@@ -1,0 +1,21 @@
+config_version=5
+
+[application]
+config/name="Fatal Kombat · Network Lab"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[display]
+window/size/viewport_width=1120
+window/size/viewport_height=700
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.035, 0.045, 0.075, 1)
+
+textures/vram_compression/import_etc2_astc=true
+
+[physics]
+common/physics_ticks_per_second=60
