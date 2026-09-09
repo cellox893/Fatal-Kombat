@@ -42,7 +42,7 @@ Checksum del replay di riferimento: `556df070167ad8eb7b20eb82f2939a78cf4cd912d2b
 ## Non verificato / mancante
 
 - Due dispositivi fisici su reti diverse, NAT traversal reale e percorso TURN selezionato.
-- Servizio STUN/TURN e credenziali: default ICE vuoto, istruzioni precise in NETWORKING.md.
+- TURN e credenziali: il default ora include STUN senza credenziali per scoprire percorsi diretti; resta assente un relay TURN e restano necessarie credenziali temporanee per NAT/firewall restrittivi, vedi NETWORKING.md.
 - Accesso di un amico esterno agli URL privati Codespaces; nessuna pubblicazione autorizzata/eseguita.
 - 60 FPS stabili sul Mac; Safari e controller.
 - Timeout wall-clock e tutti i casi di pacchetti malformati non hanno ancora copertura automatica completa; disconnessione e limite di predizione sì.
@@ -84,3 +84,11 @@ Primo incremento: attacco leggero condiviso, hit/hurtbox intere, danno, barra sa
 - `tests/browser/smoke.mjs` passato: due Chromium nello stesso Codespace, movimento fino a portata, J via tastiera, salute [100, 92] su entrambi, desync 0, 26 rollback osservati sul secondo client e arresto dopo disconnessione. Non prova reti diverse.
 - `tests/browser/cross-platform.mjs` passato: browser/Linux, tick confermato 184 e desync 0. Questo test rimane sul movimento; non verifica uno scambio di colpi web/native.
 - `tests/browser/signaling-errors.mjs` passato: timeout lobby silenziosa e chiusura 1011.
+
+## Correzione collaudo LAN — 2026-09-09
+
+Il signaling ora consegna come default il solo STUN `stun:stun.cloudflare.com:3478`; non inoltra input né abilita TURN. Aggiunta telemetria dei candidati ICE locali/remoti in `window.fatalLab` e nel messaggio di timeout, per distinguere un blocco della negoziazione dall'assenza di candidati. Questa scelta mira a rendere verificabile il percorso P2P diretto fra browser sulla stessa LAN; non è una prova che ogni router, Wi-Fi guest, VPN o firewall lo permetta.
+
+- `scripts/test.sh`: passata dopo la modifica (simulazione, signaling e WebRTC nativo).
+- Build Web: esportata con successo.
+- `node tests/browser/smoke.mjs`: passato contro la build aggiornata; due contesti Chromium hanno scambiato 2 candidati locali/remoti ciascuno, raggiunto WebRTC connesso, movimento e danno con desync 0. È un collaudo nello stesso Codespace, non due dispositivi fisici sulla LAN dell'utente.

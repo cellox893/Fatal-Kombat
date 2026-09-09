@@ -14,14 +14,16 @@ L'accesso al repository non garantisce l'accesso al forwarding privato del propr
 
 ## Configurazione ICE
 
-Default `ICE_SERVERS_JSON=[]`: candidati host, utili nei test sullo stesso computer/LAN; non promette collegamento fra reti diverse. Procurare:
+In assenza di `ICE_SERVERS_JSON`, il signaling consegna il solo STUN pubblico `stun:stun.cloudflare.com:3478`, così i browser possono scoprire e provare anche i percorsi diretti sulla LAN. Non è un relay: il traffico di gioco resta P2P e il collegamento può comunque fallire su reti guest, client isolation, VPN o firewall. È possibile impostare esplicitamente `ICE_SERVERS_JSON=[]` per una prova con soli candidati host.
+
+Per collegamenti fra reti diverse o reti locali che bloccano il traffico peer-to-peer, procurare:
 
 1. URL STUN del servizio scelto, per esempio `stun:host:3478`.
 2. URL TURN raggiungibili pubblicamente, preferibilmente UDP e TCP, più TLS se disponibile.
 3. Username e credential TURN temporanei, scadenza, eventuali limiti traffico/regioni.
 4. Per self-hosting: VPS/IP pubblico, DNS/TLS, autorizzazione e accessi di gestione, porte listener e intervallo relay UDP configurati sul firewall. Il forwarding Codespaces HTTP non sostituisce TURN.
 
-Nessun servizio pagato attivato e nessuna credenziale inventata. Copiare `services/signaling/.env.example` in `.env` nella stessa cartella, sostituire i segnaposto, poi riavviare il servizio:
+Il STUN predefinito non usa credenziali; Cloudflare lo documenta come gratuito. Nessun servizio TURN a pagamento è stato attivato e nessuna credenziale è stata inventata. Copiare `services/signaling/.env.example` in `.env` nella stessa cartella, sostituire i segnaposto TURN temporanei, poi riavviare il servizio:
 
 ```bash
 cd services/signaling

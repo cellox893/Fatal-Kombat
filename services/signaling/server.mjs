@@ -3,7 +3,11 @@ import crypto from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { pathToFileURL } from 'node:url';
 
-export function createSignaling({port = 8001, host = '0.0.0.0', iceServers = []} = {}) {
+// STUN only discovers paths: gameplay traffic still goes directly between peers.
+// TURN is deliberately opt-in, because it needs short-lived credentials.
+export const DEFAULT_ICE_SERVERS = Object.freeze([{urls: ['stun:stun.cloudflare.com:3478']}]);
+
+export function createSignaling({port = 8001, host = '0.0.0.0', iceServers = DEFAULT_ICE_SERVERS} = {}) {
   const rooms = new Map();
   const server = http.createServer((req, res) => {
     res.writeHead(200, {'Content-Type':'text/plain'}); res.end('Fatal Kombat signaling ready\n');
@@ -66,6 +70,9 @@ export function createSignaling({port = 8001, host = '0.0.0.0', iceServers = []}
   return {server,wss,rooms,close:()=>{clearInterval(timer); wss.clients.forEach(ws=>ws.terminate());wss.close();server.close();}};
 }
 if(process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  createSignaling({port:Number(process.env.PORT || 8001), iceServers:JSON.parse(process.env.ICE_SERVERS_JSON || '[]')});
+  const iceServers = process.env.ICE_SERVERS_JSON === undefined
+    ? DEFAULT_ICE_SERVERS
+    : JSON.parse(process.env.ICE_SERVERS_JSON);
+  createSignaling({port:Number(process.env.PORT || 8001), iceServers});
   console.log('Signaling listening on 0.0.0.0:'+(process.env.PORT || 8001));
 }

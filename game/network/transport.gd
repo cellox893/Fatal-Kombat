@@ -21,6 +21,8 @@ var request: Dictionary = {}
 var signaling_opened: bool = false
 var awaiting_room: bool = false
 var room_requested_at: int = 0
+var local_candidate_count: int = 0
+var remote_candidate_count: int = 0
 
 func enter(endpoint: String, code: String) -> void:
 	if active:
@@ -94,7 +96,7 @@ func _process(_delta: float) -> void:
 	if opened and Time.get_ticks_msec() - last_packet > 5000:
 		_fail("Timeout: nessun pacchetto dal peer per 5 secondi. Ricarica per riprovare.")
 	elif peer and not opened and Time.get_ticks_msec() - started_at > 30000:
-		_fail("Timeout WebRTC: potrebbe servire un relay TURN.")
+		_fail("Timeout WebRTC: candidati locali %d, remoti %d. Verifica che entrambi i browser consentano WebRTC sulla LAN; potrebbe servire un relay TURN." % [local_candidate_count, remote_candidate_count])
 	elif not signaling_opened and Time.get_ticks_msec() - started_at > 15000:
 		_fail("Timeout apertura WebSocket (15 s). Verifica accesso all’URL del gioco e rete.")
 	elif awaiting_room and Time.get_ticks_msec() - room_requested_at > 10000:
@@ -119,6 +121,7 @@ func _handle_signal(data: Dictionary) -> void:
 			peer = WebRTCPeerConnection.new()
 			peer.session_description_created.connect(_description)
 			peer.ice_candidate_created.connect(func(mid: String, index: int, candidate: String) -> void:
+				local_candidate_count += 1
 				send_signal({"type": "ice", "mid": mid, "index": index, "candidate": candidate}))
 			var err: Error = peer.initialize({"iceServers": ice_servers})
 			if err != OK:
@@ -139,6 +142,7 @@ func _handle_signal(data: Dictionary) -> void:
 					_add_ice(candidate)
 				pending_ice.clear()
 		"ice":
+			remote_candidate_count += 1
 			if not remote_description:
 				pending_ice.append(data)
 			else:

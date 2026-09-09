@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {WebSocket} from 'ws';
-import {createSignaling} from './server.mjs';
+import {createSignaling, DEFAULT_ICE_SERVERS} from './server.mjs';
 test('private room, version gate, ready, relay, full room and disconnect', async () => {
  const app=createSignaling({port:0,host:'127.0.0.1'});
  await once(app.server,'listening');
@@ -12,6 +12,7 @@ test('private room, version gate, ready, relay, full room and disconnect', async
  try {
   const a=await connect(), b=await connect(), c=await connect();
   const room=await request(a,{type:'create',version:'lab'}); assert.match(room.code,/^[A-F0-9]{8}$/);
+  assert.deepEqual(room.iceServers, DEFAULT_ICE_SERVERS);
   assert.equal((await request(b,{type:'join',code:room.code,version:'wrong'})).type,'error');
   assert.equal((await request(b,{type:'join',code:room.code,version:'lab'})).slot,1);
   assert.equal((await request(c,{type:'join',code:room.code,version:'lab'})).message,'Stanza piena');

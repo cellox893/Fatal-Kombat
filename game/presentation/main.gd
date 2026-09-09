@@ -152,7 +152,7 @@ func _process(delta: float) -> void:
 		Engine.get_frames_per_second(), frame_ms, frame_peak, session.sim.state.tick,
 		session.confirmed, net.rtt, session.rollbacks, session.resimulated, desyncs]
 	if OS.has_feature("web"):
-		JavaScriptBridge.eval("window.fatalLab = " + JSON.stringify({"room": room_code, "status": notice.text, "tick": session.sim.state.tick, "confirmed": session.confirmed, "rollback": session.rollbacks, "desyncs": desyncs, "running": running, "checksum": session.sim.checksum(), "health": [session.sim.state.fighters[0].health, session.sim.state.fighters[1].health], "x": session.sim.state.fighters[net.slot].x}))
+		JavaScriptBridge.eval("window.fatalLab = " + JSON.stringify({"room": room_code, "status": notice.text, "tick": session.sim.state.tick, "confirmed": session.confirmed, "rollback": session.rollbacks, "desyncs": desyncs, "running": running, "checksum": session.sim.checksum(), "health": [session.sim.state.fighters[0].health, session.sim.state.fighters[1].health], "x": session.sim.state.fighters[net.slot].x, "localCandidates": net.local_candidate_count, "remoteCandidates": net.remote_candidate_count}))
 	queue_redraw()
 
 func _draw() -> void:

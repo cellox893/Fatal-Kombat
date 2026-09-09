@@ -10,7 +10,7 @@ Prototipo di picchiaduro storico 2D online in Godot. Questa prima milestone è u
 4. Attendi `WebRTC connesso`. Clicca l'arena per togliere il focus dai campi. **A/D o frecce**: movimento, **spazio**: salto; **J**: attacco leggero (rilascia prima del successivo); avvicinati al rivale per colpirlo. **H**: hurtbox. Barre sopra i personaggi: salute; rettangolo arancio: fase attiva del colpo. A salute zero il laboratorio continua: KO e round non sono implementati. Il peer deve vedere gli stessi movimenti. Tick e confermato avanzano, RTT si aggiorna, desync deve restare 0. I tick correnti dei due client possono differire: i checksum vengono confrontati solo a tick confermati uguali.
 5. Chiudi un client: l'altro deve segnalare la disconnessione e fermarsi. Per una nuova stanza ricarica entrambi. Non c'è ancora rivincita.
 
-Le porte restano private. Un amico senza accesso al forwarding può non aprire questi URL: il codice stanza non concede accesso GitHub. Nessuna porta è stata resa pubblica. Con ICE vuoto la connessione è stata verificata solo sulla stessa macchina; per reti differenti serve completare STUN/TURN e accesso all'hosting, vedi [NETWORKING](docs/NETWORKING.md).
+Le porte restano private. Un amico senza accesso al forwarding può non aprire questi URL: il codice stanza non concede accesso GitHub. Nessuna porta è stata resa pubblica. Il signaling consegna STUN per tentare percorsi diretti, inclusa una LAN normale; per reti differenti o LAN che isolano i client serve completare TURN e accesso all'hosting, vedi [NETWORKING](docs/NETWORKING.md).
 
 ## Rigenerare e avviare
 
