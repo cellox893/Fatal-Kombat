@@ -1,5 +1,9 @@
 # Stato corrente
 
+## Fase 3 — risolutore di mosse (2026-09-09)
+
+Light migrata a move_id/behavior_id melee tramite catalogo validato e risolutore condiviso senza stato nascosto. Traccia pre-migrazione identica; regole e runtime lab-3 preservati. Cambia l'hash dei contenuti: ricaricare entrambi i client. Definizioni, convenzione tick e limiti in [MOVES.md](MOVES.md). Fasi successive non avviate.
+
 Revisione di chiusura fase 2: [transizioni e priorità](STATE_TRANSITIONS.md). Nessuna correzione delle regole necessaria; aggiunti test per atterraggio/scadenza/danno simultanei, KO in volo e rifiuto versione/contenuti prima del match. La fase 3 resta non avviata.
 
 ## Fase 2 — macchina a stati deterministica (2026-09-09)

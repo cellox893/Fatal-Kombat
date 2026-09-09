@@ -4,6 +4,7 @@ extends RefCounted
 
 const CONTENT_PATH := "res://content/fighters.json"
 const SCHEMA_VERSION := 1
+const Resolver = preload("res://simulation/move_resolver.gd")
 
 var schema_version: int = 0
 var arena: Dictionary = {}
@@ -44,6 +45,8 @@ static func validate(data: Dictionary) -> Array[String]:
 			else:
 				move_ids[move_id] = true
 			_validate_positive_integer(move, "startup", path, problems, true)
+			if not Resolver.supports(move.get("behavior_id")):
+				problems.append(path + ".behavior_id: required known behavior (melee)")
 			_validate_positive_integer(move, "active", path, problems)
 			_validate_positive_integer(move, "recovery", path, problems, true)
 			_validate_positive_integer(move, "damage", path, problems)

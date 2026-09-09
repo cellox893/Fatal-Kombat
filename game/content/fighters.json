@@ -9,6 +9,7 @@
   "moves": [
     {
       "move_id": "light",
+      "behavior_id": "melee",
       "startup": 5,
       "active": 3,
       "recovery": 12,

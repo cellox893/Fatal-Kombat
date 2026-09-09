@@ -2,6 +2,7 @@ class_name FightSimulation
 extends RefCounted
 ## Integer-only state. One unit = one logical pixel; velocities = units/tick.
 const Content = preload("res://content/fight_content.gd")
+const Moves = preload("res://simulation/move_resolver.gd")
 enum Locomotion { IDLE, MOVING, AIRBORNE }
 enum Action { NEUTRAL, ATTACK, HITSTUN, BLOCKSTUN, KO }
 var content := Content.new()
@@ -51,9 +52,7 @@ func apply_stun(player: int, action: Action, ticks: int) -> bool:
 	return true
 
 func _clear_move(fighter: Dictionary) -> void:
-	fighter.move = ""
-	fighter.move_tick = 0
-	fighter.hit = false
+	Moves.clear(fighter)
 
 func _enter_ko(fighter: Dictionary) -> void:
 	_clear_move(fighter)
@@ -74,10 +73,8 @@ func step(inputs: Array) -> void:
 			if int(opponent.x) != int(fighter.x):
 				fighter.facing = 1 if int(opponent.x) > int(fighter.x) else -1
 			if bits & 8 and not int(fighter.input) & 8:
-				fighter.move = str(definition.moves.light)
+				Moves.begin(fighter, str(definition.moves.light))
 				fighter.action = Action.ATTACK
-				fighter.move_tick = 0
-				fighter.hit = false
 		var axis: int = int(bool(bits & 2)) - int(bool(bits & 1))
 		if int(fighter.action) != Action.NEUTRAL:
 			axis = 0
@@ -99,15 +96,7 @@ func step(inputs: Array) -> void:
 		if int(fighter.action) != Action.ATTACK:
 			continue
 		var move: Dictionary = content.move(str(fighter.move))
-		if attack_active(fighter) and not bool(fighter.hit):
-			var target: Dictionary = state.fighters[1 - i]
-			var hurt: Dictionary = content.fighter(characters[1 - i])
-			var distance: int = (int(target.x) - int(fighter.x)) * int(fighter.facing)
-			if distance + int(hurt.hurt_width) > 0 and distance - int(hurt.hurt_width) < int(move.reach) and int(target.y) > int(fighter.y) - int(move.top) and int(target.y) - int(hurt.hurt_height) < int(fighter.y) - int(move.bottom):
-				target.health = maxi(0, int(target.health) - int(move.damage))
-				fighter.hit = true
-		fighter.move_tick = int(fighter.move_tick) + 1
-		if int(fighter.move_tick) >= int(move.startup) + int(move.active) + int(move.recovery):
+		if Moves.resolve(fighter, state.fighters[1 - i], content.fighter(characters[1 - i]), move):
 			_clear_move(fighter)
 			fighter.action = Action.NEUTRAL
 	# Apply KO only after both attacks, preserving simultaneous (including lethal) trades.
@@ -120,7 +109,7 @@ func attack_active(fighter: Dictionary) -> bool:
 	if int(fighter.action) != Action.ATTACK:
 		return false
 	var move: Dictionary = content.move(str(fighter.move))
-	return int(fighter.move_tick) >= int(move.startup) and int(fighter.move_tick) < int(move.startup) + int(move.active)
+	return Moves.phase(move, int(fighter.move_tick)) == Moves.Phase.ACTIVE
 
 func snapshot() -> Dictionary:
 	return state.duplicate(true)

@@ -1,5 +1,13 @@
 # Checkpoint verifiche — 2026-09-08
 
+## Fase 3 — 2026-09-09
+
+Passati scripts/test.sh (nuovi test, contenuti, simulazione, lobby/proxy e WebRTC nativo), build Web e smoke Chromium: due client connected, input e danno [100, 92] replicati, desync 0, disconnessione gestita, exit code 0. Collaudo sullo stesso Codespace; nessuna nuova prova fisica multi-rete. Artefatti e dipendenze esclusi dal commit.
+
+Confronto light prima/dopo migrazione: traccia di 720 tick catturata prima dell'estrazione da 4590713, digest identico (docs/MOVES.md). Nuovi test di confini 5/3/12, mossa alternativa validata 2/1/3 con danno/portata diversi, startup/recovery zero, interruzione/KO/reset nelle fasi, restore e rollback 2/5/9 tick con uguaglianza stato/checksum. Estesa validazione per behavior assente/sconosciuto e durate negative, frazionarie, tipo errato, mancanti o active zero. I test preesistenti continuano a coprire transizioni simultanee e light senza stun.
+
+Compatibilità lab-3 invariata, SHA256 catalogo aggiornato da behavior_id obbligatorio; gate pre-match copre la differenza di hash. Nessuna modifica a rete o algoritmo rollback.
+
 ## Revisione transizioni fase 2 — 2026-09-09
 
 Build Web e smoke multiplayer esistente passati: due Chromium connected, danno [100, 92], desync 0, arresto alla disconnessione, exit code 0. Test nativo bidirezionale passato nella suite. Queste verifiche restano locali al Codespace, non collaudi multi-rete.

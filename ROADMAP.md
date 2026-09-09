@@ -1,5 +1,13 @@
 # Roadmap verificabile
 
+## Fase 3 — 2026-09-09
+
+- [x] Risolutore condiviso melee, move_id/behavior_id e validazione.
+- [x] Light preservata con confronto golden pre-migrazione; definizione alternativa solo nei test.
+- [x] Confini fase, cleanup interruzione/KO/reset e rollback dei due cataloghi.
+
+Documentazione: docs/MOVES.md. Hitbox per frame, command buffer e nuovi behavior rimangono fuori da questa fase.
+
 Revisione di chiusura fase 2: coperti confini simultanei di tick, KO aereo e gate lab-3 prima del match; priorità e limiti documentati in docs/STATE_TRANSITIONS.md. Nessuna modifica a light, rete o regole simulate. Fase 3 non avviata.
 
 ## Refactoring fase 2 — 2026-09-09
