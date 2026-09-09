@@ -1,5 +1,14 @@
 # Roadmap verificabile
 
+## Fase 4 — 2026-09-09
+
+- [x] Rettangoli interi relativi al fighter, finestre a intervalli e variazioni hurtbox.
+- [x] Light migrata con bordi stretti, tempi/danno/portata preservati.
+- [x] ID deterministico istanza e registro per gruppi/bersagli; multi-hit solo nei test.
+- [x] Test orientamento/bordi/finestre, deduplicazione, nuove istanze, registro e rollback.
+
+Schema 2 e lab-4. Restano futuri command buffer, nuove mosse giocabili, proiettili e animazioni; fase successiva non avviata.
+
 ## Fase 3 — 2026-09-09
 
 - [x] Risolutore condiviso melee, move_id/behavior_id e validazione.

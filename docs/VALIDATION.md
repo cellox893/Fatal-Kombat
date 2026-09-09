@@ -1,5 +1,15 @@
 # Checkpoint verifiche — 2026-09-08
 
+## Fase 4 — 2026-09-09
+
+Build Web e smoke Chromium passati: input e danno [100, 92] replicati, connected, desync 0 e disconnessione gestita. Browser/Linux passato, confermato 183 e desync 0; warning nativo già noto “WARNING: rtc::impl::IceTransport::LogCallback@391: juice: Send failed, errno=101”, seguito da esito positivo ed exit code 0. Nessuna prova aggiuntiva fra reti/dispositivi fisici. Build e dipendenze escluse da Git.
+
+Suite scripts/test.sh passata: golden 720 tick sui vecchi campi identico; nuovo runtime verificato separatamente con uguaglianza completa snapshot/checksum durante replay/rollback. Test dedicati per bordi stretti e entrambi gli orientamenti, finestre [5,8), sostituzione hurtbox [5,6) con entrambi gli slot, rettangoli sovrapposti, permanenza, gruppi multi-hit, seconda istanza, checksum dei nuovi campi, cleanup interruzione/KO/reset, rollback 2/5/9 tick attraverso impatti multipli. Contenuti di prova soltanto in memoria.
+
+Validazione copre campi mancanti, dimensioni nulle/negative/frazionarie/non numeriche/infinite/eccessive, finestre fuori fase o vuote/invertite, riferimenti gruppi inesistenti, ID duplicati, finestre hurtbox sovrapposte/fuori durata. Gate testato con lab-3 rifiutato da stanza lab-4 e con hash diversi.
+
+Nuovo checksum replay movimento 600 tick: 8200b60e7f734810baf5b249b1d7a79c09fa1883d9f538d4a153792665554c5a. Cambiamento atteso per attack_sequence, attack_id e hit_targets. Golden legacy: 25bdfec7b19f6f648514f92903aef150b79cdc3bebcf1be07aefc625e87e85ab. Le regole della light non cambiano; dettagli in MOVES.md.
+
 ## Fase 3 — 2026-09-09
 
 Passati scripts/test.sh (nuovi test, contenuti, simulazione, lobby/proxy e WebRTC nativo), build Web e smoke Chromium: due client connected, input e danno [100, 92] replicati, desync 0, disconnessione gestita, exit code 0. Collaudo sullo stesso Codespace; nessuna nuova prova fisica multi-rete. Artefatti e dipendenze esclusi dal commit.

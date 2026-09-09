@@ -203,7 +203,10 @@ func _draw() -> void:
 		draw_rect(Rect2(pos + Vector2(-30, -140), Vector2(60 * float(fighter.health) / 100.0, 5)), color)
 		if session.sim.attack_active(fighter):
 			var move: Dictionary = session.sim.content.move(str(fighter.move))
-			var offset: float = 0.0 if facing > 0 else -float(move.reach)
-			draw_rect(Rect2(pos + Vector2(offset, -float(move.top)), Vector2(float(move.reach), float(move.top) - float(move.bottom))), Color(1, 0.7, 0.2, 0.5))
+			for box: Dictionary in session.sim.Moves.active_hitboxes(move, int(fighter.move_tick)):
+				var world: Dictionary = session.sim.Moves.world_box(fighter, box)
+				draw_rect(Rect2(world.x, world.y, world.width, world.height), Color(1, 0.7, 0.2, 0.5))
 		if Input.is_physical_key_pressed(KEY_H):
-			draw_rect(Rect2(pos + Vector2(-24, -113), Vector2(48, 113)), Color.GREEN, false, 1)
+			var move: Dictionary = session.sim.content.move(str(fighter.move)) if not str(fighter.move).is_empty() else {}
+			for box: Dictionary in session.sim.Moves.hurtboxes(fighter, definition, move):
+				draw_rect(Rect2(box.x, box.y, box.width, box.height), Color.GREEN, false, 1)

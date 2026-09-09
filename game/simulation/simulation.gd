@@ -32,6 +32,7 @@ func reset() -> void:
 		state.fighters.append({"x": 300 + i * 520, "y": int(content.arena.floor), "vy": 0, "health": int(definition.health),
 			"resource": 100, "cooldown": 0, "effects": [], "input": 0, "facing": 1 if i == 0 else -1,
 			"move": "", "move_tick": 0, "hit": false,
+			"attack_sequence": 0, "attack_id": [], "hit_targets": [],
 			"locomotion": Locomotion.IDLE, "action": Action.NEUTRAL, "stun_ticks": 0})
 
 ## Simulation-only effect entry point. Durations count subsequent blocked ticks.
@@ -73,7 +74,7 @@ func step(inputs: Array) -> void:
 			if int(opponent.x) != int(fighter.x):
 				fighter.facing = 1 if int(opponent.x) > int(fighter.x) else -1
 			if bits & 8 and not int(fighter.input) & 8:
-				Moves.begin(fighter, str(definition.moves.light))
+				Moves.begin(fighter, str(definition.moves.light), i)
 				fighter.action = Action.ATTACK
 		var axis: int = int(bool(bits & 2)) - int(bool(bits & 1))
 		if int(fighter.action) != Action.NEUTRAL:
@@ -91,12 +92,17 @@ func step(inputs: Array) -> void:
 			if int(fighter.stun_ticks) == 0:
 				fighter.action = Action.NEUTRAL
 	# Resolve both attacks after movement; simultaneous hits trade.
+	var hurtboxes: Array = []
+	for i in range(2):
+		var fighter: Dictionary = state.fighters[i]
+		var move: Dictionary = content.move(str(fighter.move)) if int(fighter.action) == Action.ATTACK else {}
+		hurtboxes.append(Moves.hurtboxes(fighter, content.fighter(characters[i]), move))
 	for i in range(2):
 		var fighter: Dictionary = state.fighters[i]
 		if int(fighter.action) != Action.ATTACK:
 			continue
 		var move: Dictionary = content.move(str(fighter.move))
-		if Moves.resolve(fighter, state.fighters[1 - i], content.fighter(characters[1 - i]), move):
+		if Moves.resolve(fighter, state.fighters[1 - i], hurtboxes[1 - i], move, 1 - i):
 			_clear_move(fighter)
 			fighter.action = Action.NEUTRAL
 	# Apply KO only after both attacks, preserving simultaneous (including lethal) trades.
@@ -123,8 +129,9 @@ func checksum() -> String:
 	for fighter: Dictionary in state.fighters:
 		canonical.append([fighter.x, fighter.y, fighter.vy, fighter.health,
 			fighter.resource, fighter.cooldown, fighter.effects, fighter.input, fighter.facing, fighter.move, fighter.move_tick, fighter.hit,
-			fighter.locomotion, fighter.action, fighter.stun_ticks])
+			fighter.locomotion, fighter.action, fighter.stun_ticks,
+			fighter.attack_sequence, fighter.attack_id, fighter.hit_targets])
 	return JSON.stringify(canonical).sha256_text()
 
 static func compatibility() -> String:
-	return "lab-3:" + Content.new().raw_json.sha256_text()
+	return "lab-4:" + Content.new().raw_json.sha256_text()

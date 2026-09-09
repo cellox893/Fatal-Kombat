@@ -20,7 +20,7 @@ func _initialize() -> void:
 				left |= 2
 				right |= 1
 			sim.step([left, right])
-			trace += sim.checksum()
+			trace += _legacy_checksum(sim)
 	assert(trace.sha256_text() == "25bdfec7b19f6f648514f92903aef150b79cdc3bebcf1be07aefc625e87e85ab", "light diverged from 4590713")
 	_test_definitions()
 	print("PASS pre-migration 720-tick golden trace, phase boundaries, alternate data and rollback")
@@ -49,7 +49,8 @@ func _test_definitions() -> void:
 			assert(not interrupted.attack_active(fighter))
 	# New ID and values, only in the fixture, through the production validator.
 	var data: Dictionary = JSON.parse_string(base.content.raw_json)
-	data.moves.append({"move_id": "test_strike", "behavior_id": "melee", "startup": 2, "active": 1, "recovery": 3, "damage": 13, "reach": 150, "bottom": 10, "top": 120})
+	data.moves.append({"move_id": "test_strike", "behavior_id": "melee", "startup": 2, "active": 1, "recovery": 3, "damage": 13,
+		"hit_groups": ["strike"], "hitboxes": [{"box_id":"fist","group_id":"strike","from":2,"to":3,"x":0,"y":-120,"width":150,"height":110}], "hurtbox_windows": []})
 	data.fighters[0].moves.light = "test_strike"
 	data.fighters[1].moves.light = "test_strike"
 	assert(Content.validate(data).is_empty())
@@ -71,6 +72,8 @@ func _test_definitions() -> void:
 	var instant: Dictionary = data.duplicate(true)
 	instant.moves[1].startup = 0
 	instant.moves[1].recovery = 0
+	instant.moves[1].hitboxes[0].from = 0
+	instant.moves[1].hitboxes[0].to = 1
 	assert(Content.validate(instant).is_empty())
 	var one_tick := Sim.new()
 	one_tick.content = Content.new(instant)
@@ -98,3 +101,13 @@ func _test_definitions() -> void:
 			assert(session.rollbacks > 0 and session.failure.is_empty())
 			assert(session.sim.snapshot() == reference.snapshot())
 			assert(session.sim.checksum() == reference.checksum())
+
+func _legacy_checksum(sim: RefCounted) -> String:
+	# Projection of exactly the previous runtime, never used for multiplayer.
+	var state: Dictionary = sim.state
+	var canonical: Array = [state.tick, state.rng, state.projectiles, state.objects]
+	for fighter: Dictionary in state.fighters:
+		canonical.append([fighter.x, fighter.y, fighter.vy, fighter.health,
+			fighter.resource, fighter.cooldown, fighter.effects, fighter.input, fighter.facing, fighter.move, fighter.move_tick, fighter.hit,
+			fighter.locomotion, fighter.action, fighter.stun_ticks])
+	return JSON.stringify(canonical).sha256_text()

@@ -11,10 +11,10 @@ test('private room, version gate, ready, relay, full room and disconnect', async
  const request=async(ws,m)=>{const result=once(ws,'message');ws.send(JSON.stringify(m));return JSON.parse((await result)[0]);};
  try {
   const a=await connect(), b=await connect(), c=await connect();
-  const version='lab-3:'+'a'.repeat(64);
+  const version='lab-4:'+'a'.repeat(64);
   const room=await request(a,{type:'create',version}); assert.match(room.code,/^[A-F0-9]{8}$/);
   assert.deepEqual(room.iceServers, DEFAULT_ICE_SERVERS);
-  for(const incompatible of ['lab-2:'+'a'.repeat(64), 'lab-3:'+'b'.repeat(64)]) {
+  for(const incompatible of ['lab-3:'+'a'.repeat(64), 'lab-4:'+'b'.repeat(64)]) {
    assert.equal((await request(b,{type:'join',code:room.code,version:incompatible})).message,'Build o contenuti incompatibili');
    assert.equal(app.rooms.get(room.code).peers.length,1);
    assert.equal(app.rooms.get(room.code).started,false);

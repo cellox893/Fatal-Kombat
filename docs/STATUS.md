@@ -1,5 +1,11 @@
 # Stato corrente
 
+## Fase 4 — geometrie e registro colpi (2026-09-09)
+
+Hitbox/hurtbox intere nei dati, finestre [from,to), hurtbox base e sostituzioni durante mosse; istanze [slot,sequenza] e registro ordinato gruppo/bersaglio negli snapshot/checksum. Light equivalente sulla traccia storica di 720 tick. Gruppi multi-hit solo nei test. Diagnostica legge gli stessi rettangoli della simulazione.
+
+Schema 2, compatibilità lab-4 e nuovo hash catalogo: ricaricare entrambi i client. Nessuna modifica a trasporto, nuove mosse giocabili o fasi successive. Specifiche e limiti aggiornati in [MOVES.md](MOVES.md).
+
 ## Fase 3 — risolutore di mosse (2026-09-09)
 
 Light migrata a move_id/behavior_id melee tramite catalogo validato e risolutore condiviso senza stato nascosto. Traccia pre-migrazione identica; regole e runtime lab-3 preservati. Cambia l'hash dei contenuti: ricaricare entrambi i client. Definizioni, convenzione tick e limiti in [MOVES.md](MOVES.md). Fasi successive non avviate.

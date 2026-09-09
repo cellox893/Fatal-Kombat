@@ -3,7 +3,7 @@ extends RefCounted
 ## Validated, versioned combat content. The simulation consumes only stable IDs.
 
 const CONTENT_PATH := "res://content/fighters.json"
-const SCHEMA_VERSION := 1
+const SCHEMA_VERSION := 2
 const Resolver = preload("res://simulation/move_resolver.gd")
 
 var schema_version: int = 0
@@ -50,11 +50,7 @@ static func validate(data: Dictionary) -> Array[String]:
 			_validate_positive_integer(move, "active", path, problems)
 			_validate_positive_integer(move, "recovery", path, problems, true)
 			_validate_positive_integer(move, "damage", path, problems)
-			_validate_positive_integer(move, "reach", path, problems)
-			_validate_positive_integer(move, "bottom", path, problems, true)
-			_validate_positive_integer(move, "top", path, problems)
-			if _is_integer(move.get("top")) and _is_integer(move.get("bottom")) and int(move.top) <= int(move.bottom):
-				problems.append(path + ": top must exceed bottom")
+			_validate_move_boxes(move, path, problems)
 	var fighter_ids: Dictionary = {}
 	if not data.get("fighters") is Array or data.fighters.size() < 2:
 		problems.append("fighters: array with at least two fighters required")
@@ -80,8 +76,7 @@ static func validate(data: Dictionary) -> Array[String]:
 			elif int(fighter.jump) >= 0:
 				problems.append(path + ".jump: must be negative")
 			_validate_positive_integer(fighter, "health", path, problems)
-			_validate_positive_integer(fighter, "hurt_width", path, problems)
-			_validate_positive_integer(fighter, "hurt_height", path, problems)
+			_validate_boxes(fighter.get("hurtboxes"), path + ".hurtboxes", problems)
 			if not _valid_color(str(fighter.get("color", ""))):
 				problems.append(path + ".color: six hexadecimal digits required")
 			if not fighter.get("moves") is Dictionary or not fighter.moves.has("light"):
@@ -145,7 +140,73 @@ static func _validate_positive_integer(source: Dictionary, field: String, path: 
 		problems.append(path + "." + field + ": " + ("non-negative" if allow_zero else "positive") + " integer required")
 
 static func _is_integer(value: Variant) -> bool:
-	return (value is int or value is float) and float(value) == floorf(float(value))
+	return (value is int or value is float) and is_finite(float(value)) and absf(float(value)) <= 1000000 and float(value) == floorf(float(value))
+
+static func _validate_boxes(value: Variant, path: String, problems: Array[String]) -> void:
+	if not value is Array or value.is_empty():
+		problems.append(path + ": non-empty box array required")
+		return
+	var ids: Dictionary = {}
+	for box: Variant in value:
+		if not box is Dictionary:
+			problems.append(path + ": box object required")
+			continue
+		var id: Variant = box.get("box_id")
+		if not id is String or not _valid_id(str(id)) or ids.has(id):
+			problems.append(path + ".box_id: missing, invalid or duplicate")
+		else:
+			ids[id] = true
+		for field: String in ["x", "y"]:
+			if not _is_integer(box.get(field)):
+				problems.append(path + "." + field + ": bounded integer required")
+		for field: String in ["width", "height"]:
+			_validate_positive_integer(box, field, path, problems)
+
+static func _valid_window(window: Dictionary, start: int, end: int, path: String, problems: Array[String]) -> bool:
+	if not _is_integer(window.get("from")) or not _is_integer(window.get("to")):
+		problems.append(path + ": integer from/to required")
+		return false
+	if int(window.from) < start or int(window.to) > end or int(window.from) >= int(window.to):
+		problems.append(path + ": invalid window")
+		return false
+	return true
+
+static func _validate_move_boxes(move: Dictionary, path: String, problems: Array[String]) -> void:
+	var groups: Dictionary = {}
+	if not move.get("hit_groups") is Array or move.hit_groups.is_empty():
+		problems.append(path + ".hit_groups: non-empty ID array required")
+	else:
+		for id: Variant in move.hit_groups:
+			if not id is String or not _valid_id(str(id)) or groups.has(id):
+				problems.append(path + ".hit_groups: missing, invalid or duplicate ID")
+			else:
+				groups[id] = true
+	_validate_boxes(move.get("hitboxes"), path + ".hitboxes", problems)
+	var timing_valid := true
+	for field: String in ["startup", "active", "recovery"]:
+		timing_valid = timing_valid and _is_integer(move.get(field))
+	if move.get("hitboxes") is Array:
+		for box: Variant in move.hitboxes:
+			if not box is Dictionary:
+				continue
+			if not box.get("group_id") is String or not groups.has(box.get("group_id")):
+				problems.append(path + ".group_id: unknown hit group")
+			if timing_valid:
+				_valid_window(box, int(move.startup), int(move.startup) + int(move.active), path + ".hitboxes", problems)
+	if not move.get("hurtbox_windows") is Array:
+		problems.append(path + ".hurtbox_windows: array required")
+		return
+	var windows: Array = []
+	for window: Variant in move.hurtbox_windows:
+		if not window is Dictionary:
+			problems.append(path + ".hurtbox_windows: object required")
+			continue
+		_validate_boxes(window.get("boxes"), path + ".hurtbox_windows.boxes", problems)
+		if timing_valid and _valid_window(window, 0, Resolver.duration(move), path + ".hurtbox_windows", problems):
+			for previous: Dictionary in windows:
+				if int(window.from) < int(previous.to) and int(window.to) > int(previous.from):
+					problems.append(path + ".hurtbox_windows: overlapping replacement windows")
+			windows.append(window)
 
 static func _valid_id(value: String) -> bool:
 	if value.is_empty() or value != value.to_lower() or not "abcdefghijklmnopqrstuvwxyz".contains(value[0]):

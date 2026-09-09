@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "arena": {
     "arena_id": "observatory",
     "left": 70,
@@ -14,9 +14,9 @@
       "active": 3,
       "recovery": 12,
       "damage": 8,
-      "reach": 72,
-      "bottom": 30,
-      "top": 90
+      "hit_groups": ["light_hit"],
+      "hitboxes": [{"box_id":"fist","group_id":"light_hit","from":5,"to":8,"x":0,"y":-90,"width":72,"height":60}],
+      "hurtbox_windows": []
     }
   ],
   "fighters": [
@@ -28,8 +28,7 @@
       "health": 100,
       "color": "dfad61",
       "moves": {"light": "light"},
-      "hurt_width": 24,
-      "hurt_height": 113
+      "hurtboxes": [{"box_id":"body","x":-24,"y":-113,"width":48,"height":113}]
     },
     {
       "fighter_id": "tesla",
@@ -39,8 +38,7 @@
       "health": 100,
       "color": "63dce8",
       "moves": {"light": "light"},
-      "hurt_width": 24,
-      "hurt_height": 113
+      "hurtboxes": [{"box_id":"body","x":-24,"y":-113,"width":48,"height":113}]
     }
   ],
   "default_fighters": ["leonidas", "tesla"]

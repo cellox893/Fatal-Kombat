@@ -23,7 +23,7 @@ func _initialize() -> void:
 	zero.moves[0].active = 0
 	_assert_problem(Content.validate(zero), "active")
 	assert(content.is_valid(), "default content must validate: " + "; ".join(content.errors))
-	assert(content.schema_version == 1)
+	assert(content.schema_version == 2)
 	assert(content.has_fighter("leonidas") and content.has_fighter("tesla"))
 	assert(content.move("light").move_id == "light")
 	var duplicate := _valid_data()
@@ -57,13 +57,4 @@ func _assert_problem(problems: Array[String], expected: String) -> void:
 	assert(false, "expected validation error containing %s, got %s" % [expected, problems])
 
 func _valid_data() -> Dictionary:
-	return {
-		"schema_version": 1,
-		"arena": {"arena_id": "arena", "left": 0, "right": 100, "floor": 10},
-		"moves": [{"move_id": "light", "behavior_id": "melee", "startup": 1, "active": 1, "recovery": 1, "damage": 1, "reach": 1, "bottom": 0, "top": 1}],
-		"fighters": [
-			{"fighter_id": "leonidas", "label": "Leonidas", "speed": 1, "jump": -1, "health": 100, "color": "ffffff", "moves": {"light": "light"}, "hurt_width": 1, "hurt_height": 1},
-			{"fighter_id": "tesla", "label": "Tesla", "speed": 1, "jump": -1, "health": 100, "color": "000000", "moves": {"light": "light"}, "hurt_width": 1, "hurt_height": 1}
-		],
-		"default_fighters": ["leonidas", "tesla"]
-	}
+	return JSON.parse_string(FileAccess.get_file_as_string(Content.CONTENT_PATH))
