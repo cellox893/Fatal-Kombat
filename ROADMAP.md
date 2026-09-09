@@ -1,5 +1,7 @@
 # Roadmap verificabile
 
+Revisione di chiusura fase 2: coperti confini simultanei di tick, KO aereo e gate lab-3 prima del match; priorità e limiti documentati in docs/STATE_TRANSITIONS.md. Nessuna modifica a light, rete o regole simulate. Fase 3 non avviata.
+
 ## Refactoring fase 2 — 2026-09-09
 
 - [x] Locomozione e azione separate, enum interi e timer stun nello snapshot/checksum.

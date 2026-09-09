@@ -1,5 +1,7 @@
 # Stato corrente
 
+Revisione di chiusura fase 2: [transizioni e priorità](STATE_TRANSITIONS.md). Nessuna correzione delle regole necessaria; aggiunti test per atterraggio/scadenza/danno simultanei, KO in volo e rifiuto versione/contenuti prima del match. La fase 3 resta non avviata.
+
 ## Fase 2 — macchina a stati deterministica (2026-09-09)
 
 Locomozione intera separata (IDLE, MOVING, AIRBORNE) e azione intera (NEUTRAL, ATTACK, HITSTUN, BLOCKSTUN, KO). Entrambe, insieme a stun_ticks, sono incluse negli snapshot profondi e nel checksum. La light conserva startup/active/recovery, danno, direzione, singolo impatto e scambi simultanei.

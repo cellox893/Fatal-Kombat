@@ -1,5 +1,11 @@
 # Checkpoint verifiche — 2026-09-08
 
+## Revisione transizioni fase 2 — 2026-09-09
+
+Build Web e smoke multiplayer esistente passati: due Chromium connected, danno [100, 92], desync 0, arresto alla disconnessione, exit code 0. Test nativo bidirezionale passato nella suite. Queste verifiche restano locali al Codespace, non collaudi multi-rete.
+
+Suite scripts/test.sh passata con nuova copertura di atterraggio + fine attacco/stun + danno, in entrambi gli slot e con salute 100/8; KO in volo fino all'atterraggio; uguaglianza completa snapshot/checksum dopo replay e reset. Test lobby esteso al rifiuto lab-2/lab-3 e hash contenuti diverso prima dell'ingresso. Checksum di riferimento invariato. Priorità, limiti degli stun e testo esatto del warning ICE precedente in [STATE_TRANSITIONS.md](STATE_TRANSITIONS.md).
+
 ## Refactoring fase 2 — 2026-09-09
 
 Suite scripts/test.sh passata: nuovi test transizioni locomozione/azione, doppio salto vietato, input bloccati durante attacco/stun, interruzione attacco da hitstun, blockstun vietato durante attacco, durata esatta e nessun buffer implicito, atterraggio, inclusione di ogni campo nel checksum, KO simultaneo e reset. Rollback con ritardi 2/5/9 tick attraversa scadenza di hitstun/blockstun inizializzati nei test, attacco e KO; replay identico. Light conserva i test precedenti. Passati anche contenuti, rete sintetica, lobby/proxy e WebRTC nativo bidirezionale.

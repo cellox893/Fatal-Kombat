@@ -11,11 +11,17 @@ test('private room, version gate, ready, relay, full room and disconnect', async
  const request=async(ws,m)=>{const result=once(ws,'message');ws.send(JSON.stringify(m));return JSON.parse((await result)[0]);};
  try {
   const a=await connect(), b=await connect(), c=await connect();
-  const room=await request(a,{type:'create',version:'lab'}); assert.match(room.code,/^[A-F0-9]{8}$/);
+  const version='lab-3:'+'a'.repeat(64);
+  const room=await request(a,{type:'create',version}); assert.match(room.code,/^[A-F0-9]{8}$/);
   assert.deepEqual(room.iceServers, DEFAULT_ICE_SERVERS);
-  assert.equal((await request(b,{type:'join',code:room.code,version:'wrong'})).type,'error');
-  assert.equal((await request(b,{type:'join',code:room.code,version:'lab'})).slot,1);
-  assert.equal((await request(c,{type:'join',code:room.code,version:'lab'})).message,'Stanza piena');
+  for(const incompatible of ['lab-2:'+'a'.repeat(64), 'lab-3:'+'b'.repeat(64)]) {
+   assert.equal((await request(b,{type:'join',code:room.code,version:incompatible})).message,'Build o contenuti incompatibili');
+   assert.equal(app.rooms.get(room.code).peers.length,1);
+   assert.equal(app.rooms.get(room.code).started,false);
+   assert.equal((await request(b,{type:'ready',character:'tesla',ready:true})).message,'Entra prima in una stanza');
+  }
+  assert.equal((await request(b,{type:'join',code:room.code,version})).slot,1);
+  assert.equal((await request(c,{type:'join',code:room.code,version})).message,'Stanza piena');
   await request(a,{type:'ready',character:'leonidas',ready:true});
   const connected= new Promise(resolve=>a.on('message',raw=>{const m=JSON.parse(raw);if(m.type==='connect') resolve(m);}));
   await request(b,{type:'ready',character:'tesla',ready:true});await connected;

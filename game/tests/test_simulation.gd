@@ -4,6 +4,7 @@ const Rollback = preload("res://network/rollback.gd")
 
 func _initialize() -> void:
 	_test_states()
+	_test_tick_boundaries()
 	_test_content_selection()
 	_test_combat()
 	var baseline := Sim.new()
@@ -151,6 +152,63 @@ func _test_content_selection() -> void:
 	assert(sim.set_fighters(["tesla", "unknown"]) == ERR_DOES_NOT_EXIST, "unknown fighter reference must fail")
 	assert(sim.characters == ["tesla", "leonidas"], "invalid selection must not change fighters")
 	print("PASS stable fighter IDs and configured reset statistics")
+
+func _test_tick_boundaries() -> void:
+	# Fixtures describe a reachable pre-tick snapshot, not new combat effects.
+	for target_action: int in [Sim.Action.ATTACK, Sim.Action.HITSTUN, Sim.Action.BLOCKSTUN]:
+		for health: int in [100, 8]:
+			for target_slot in range(2):
+				var sim := Sim.new()
+				sim.state.fighters[1].x = 360
+				var target: Dictionary = sim.state.fighters[target_slot]
+				var attacker: Dictionary = sim.state.fighters[1 - target_slot]
+				target.health = health
+				target.y = int(sim.content.arena.floor) - 1
+				target.vy = 2
+				target.locomotion = Sim.Locomotion.AIRBORNE
+				if target_action == Sim.Action.ATTACK:
+					target.action = Sim.Action.ATTACK
+					target.move = "light"
+					target.move_tick = 19 # Last recovery tick.
+					target.hit = true
+				else:
+					assert(sim.apply_stun(target_slot, target_action, 1))
+				attacker.action = Sim.Action.ATTACK
+				attacker.move = "light"
+				attacker.move_tick = 5
+				var saved: Dictionary = sim.snapshot()
+				sim.step([14, 14])
+				assert(target.y == int(sim.content.arena.floor) and target.vy == 0)
+				assert(target.locomotion == Sim.Locomotion.IDLE)
+				assert(target.health == health - 8)
+				assert(target.action == (Sim.Action.KO if health == 8 else Sim.Action.NEUTRAL))
+				assert(target.move == "" and target.move_tick == 0 and not target.hit and target.stun_ticks == 0)
+				var expected: Dictionary = sim.snapshot()
+				var expected_hash: String = sim.checksum()
+				sim.restore(saved)
+				sim.step([14, 14])
+				assert(sim.snapshot() == expected and sim.checksum() == expected_hash)
+				sim.reset()
+				assert(sim.snapshot() == Sim.new().snapshot(), "reset clears all transition data")
+	# KO during flight: no new velocity/input, gravity continues through landing.
+	var airborne := Sim.new()
+	airborne.step([4, 0])
+	airborne.state.fighters[0].health = 0
+	var saved: Dictionary = airborne.snapshot()
+	var x: int = airborne.state.fighters[0].x
+	for tick in range(40):
+		airborne.step([14 if tick % 2 == 0 else 1, 0])
+		var fighter: Dictionary = airborne.state.fighters[0]
+		assert(fighter.action == Sim.Action.KO and fighter.x == x and fighter.move == "")
+		assert(fighter.locomotion == (Sim.Locomotion.AIRBORNE if fighter.y < 550 else Sim.Locomotion.IDLE))
+	assert(airborne.state.fighters[0].y == 550 and airborne.state.fighters[0].vy == 0)
+	var expected: Dictionary = airborne.snapshot()
+	var expected_hash: String = airborne.checksum()
+	airborne.restore(saved)
+	for tick in range(40):
+		airborne.step([14 if tick % 2 == 0 else 1, 0])
+	assert(airborne.snapshot() == expected and airborne.checksum() == expected_hash)
+	print("PASS same-tick landing/expiry/damage priorities in both slots, airborne KO and exact replay/reset")
 
 func input_at(tick: int, player: int) -> int:
 	return (1 if (tick + player * 37) % 80 < 40 else 2) | (4 if tick % 61 == 0 else 0)
