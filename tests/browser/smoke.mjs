@@ -28,6 +28,7 @@ try {
  assert(states.every(s=>s.running && s.desyncs===0));
  assert(states.every(s=>s.iceGatheringState==='complete' && s.iceCompleteLocal && s.iceCompleteRemote));
  assert(states.every(s=>s.browser.config.iceTransportPolicy==='all' && s.browser.iceConnectionState==='connected' && s.browser.connectionState==='connected'));
+ assert(states.every(s=>s.browser.dataChannels===1 && /m=application/.test(s.browser.localDescription.sdp) && /a=ice-ufrag:/.test(s.browser.localDescription.sdp) && /a=ice-pwd:/.test(s.browser.localDescription.sdp) && /a=fingerprint:/.test(s.browser.localDescription.sdp) && /m=application/.test(s.browser.remoteDescription.sdp)));
  assert(states.every(s=>s.browser.events.some(event=>event.startsWith('onicecandidate=')) && s.browser.events.some(event=>event==='onicecandidate-end=complete')));
  assert.equal(errors.length,0,errors.join('\n'));
  console.log('PASS two Chromium contexts, Godot WebRTC movement and melee damage',states);

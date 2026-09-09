@@ -22,12 +22,26 @@ const WEBRTC_PROBE = String.raw`<script>
     const pc = new Native(config);
     store.installed = true; store.created = true; store.config = config;
     const type = candidate => candidate.type || ((candidate.candidate || '').match(/ typ ([^ ]+)/) || [])[1] || 'other';
-    const sync = () => { store.iceGatheringState = pc.iceGatheringState; store.iceConnectionState = pc.iceConnectionState; store.connectionState = pc.connectionState; };
+    const description = value => value ? {type:value.type,sdp:value.sdp} : null;
+    const sync = () => { store.iceGatheringState = pc.iceGatheringState; store.iceConnectionState = pc.iceConnectionState; store.connectionState = pc.connectionState; store.signalingState = pc.signalingState; store.localDescription = description(pc.localDescription); store.remoteDescription = description(pc.remoteDescription); };
     pc.addEventListener('icegatheringstatechange', () => { sync(); log('iceGatheringState', store.iceGatheringState); });
     pc.addEventListener('iceconnectionstatechange', () => { sync(); log('iceConnectionState', store.iceConnectionState); });
     pc.addEventListener('connectionstatechange', () => { sync(); log('connectionState', store.connectionState); });
+    pc.addEventListener('signalingstatechange', () => { sync(); log('signalingState', store.signalingState); });
     pc.addEventListener('icecandidate', event => { if (!event.candidate) { log('onicecandidate-end', 'complete'); return; } const candidate = event.candidate.toJSON(); candidate.type = type(event.candidate); store.localCandidates = store.localCandidates || []; store.localCandidates.push(candidate); log('onicecandidate', JSON.stringify(candidate)); });
     pc.addEventListener('icecandidateerror', event => { store.iceCandidateError = 'code=' + (event.errorCode || '') + ' text=' + (event.errorText || '') + ' url=' + (event.url || '') + ' address=' + (event.address || '') + ' port=' + (event.port || ''); log('onicecandidateerror', store.iceCandidateError); });
+    const createOffer = pc.createOffer.bind(pc);
+    pc.createOffer = async (...args) => { try { const value = await createOffer(...args); store.offerDescription = description(value); log('createOffer', value.type); return value; } catch (error) { store.createOfferError = String(error); log('createOfferError', store.createOfferError); throw error; } };
+    const createAnswer = pc.createAnswer.bind(pc);
+    pc.createAnswer = async (...args) => { try { const value = await createAnswer(...args); store.answerDescription = description(value); log('createAnswer', value.type); return value; } catch (error) { store.createAnswerError = String(error); log('createAnswerError', store.createAnswerError); throw error; } };
+    const setLocalDescription = pc.setLocalDescription.bind(pc);
+    pc.setLocalDescription = async value => { try { const result = await setLocalDescription(value); sync(); log('setLocalDescription', pc.localDescription ? pc.localDescription.type : 'none'); return result; } catch (error) { store.setLocalDescriptionError = String(error); log('setLocalDescriptionError', store.setLocalDescriptionError); throw error; } };
+    const setRemoteDescription = pc.setRemoteDescription.bind(pc);
+    pc.setRemoteDescription = async value => { try { const result = await setRemoteDescription(value); sync(); log('setRemoteDescription', pc.remoteDescription ? pc.remoteDescription.type : 'none'); return result; } catch (error) { store.setRemoteDescriptionError = String(error); log('setRemoteDescriptionError', store.setRemoteDescriptionError); throw error; } };
+    const addIceCandidate = pc.addIceCandidate.bind(pc);
+    pc.addIceCandidate = async value => { const raw = value && value.candidate ? value.candidate : String(value); store.addedRemoteCandidates = store.addedRemoteCandidates || []; store.addedRemoteCandidates.push(raw); try { const result = await addIceCandidate(value); log('addIceCandidate', raw); return result; } catch (error) { store.addIceCandidateError = String(error); log('addIceCandidateError', store.addIceCandidateError + ' raw=' + raw); throw error; } };
+    const createDataChannel = pc.createDataChannel.bind(pc);
+    pc.createDataChannel = (...args) => { const channel = createDataChannel(...args); store.dataChannels = (store.dataChannels || 0) + 1; log('createDataChannel', args[0]); return channel; };
     sync(); log('created');
     return pc;
   }
