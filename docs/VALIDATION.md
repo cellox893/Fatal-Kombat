@@ -85,6 +85,16 @@ Primo incremento: attacco leggero condiviso, hit/hurtbox intere, danno, barra sa
 - `tests/browser/cross-platform.mjs` passato: browser/Linux, tick confermato 184 e desync 0. Questo test rimane sul movimento; non verifica uno scambio di colpi web/native.
 - `tests/browser/signaling-errors.mjs` passato: timeout lobby silenziosa e chiusura 1011.
 
+## Fondazione contenuti — fase 1, 2026-09-09
+
+Il catalogo combattimento è stato convertito a schema JSON versione 1: fighter e mosse hanno rispettivamente `fighter_id` e `move_id`; `default_fighters` e la mossa leggera di ogni fighter sono riferimenti espliciti. La simulazione usa ID anziché indici di array e il reset legge `health` dalla definizione selezionata. Velocità, salto, hurtbox e mossa continuano a essere letti dalle definizioni validate.
+
+- `game/tests/test_content.gd`: passato. Copre catalogo base, versione schema, ID duplicati o mancanti, riferimento a mossa/fighter inesistente, valore non valido e campo obbligatorio assente.
+- `game/tests/test_simulation.gd`: passato. Include ora selezione tramite ID stabili, rifiuto atomico di un fighter inesistente e salute iniziale dai dati, oltre a replay, snapshot e rollback esistenti.
+- `scripts/test.sh`: passato integralmente, inclusi signaling Node e due peer WebRTC nativi. Il checksum replay di riferimento resta `ac2cf9933e9ba6ec109aafee4f8948fd3d5aefe77da5bb9b408bb4c0fd184803`.
+
+`node tests/browser/smoke.mjs` è passato sulla build Web rigenerata: due Chromium hanno raggiunto `connected`, scambiato candidati ICE, movimento e danno con `desyncs: 0`; la chiusura del peer ha fermato la simulazione. Non è una prova aggiuntiva di reti fisiche differenti. WebRTC, signaling, pacchetti e configurazione ICE non sono stati cambiati in questa fase.
+
 ## Correzione collaudo LAN — 2026-09-09
 
 Il signaling ora consegna come default il solo STUN `stun:stun.cloudflare.com:3478`; non inoltra input né abilita TURN. Aggiunta telemetria dei candidati ICE locali/remoti in `window.fatalLab` e nel messaggio di timeout, per distinguere un blocco della negoziazione dall'assenza di candidati. Questa scelta mira a rendere verificabile il percorso P2P diretto fra browser sulla stessa LAN; non è una prova che ogni router, Wi-Fi guest, VPN o firewall lo permetta.

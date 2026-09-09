@@ -3,6 +3,7 @@ const Sim = preload("res://simulation/simulation.gd")
 const Rollback = preload("res://network/rollback.gd")
 
 func _initialize() -> void:
+	_test_content_selection()
 	_test_combat()
 	var baseline := Sim.new()
 	var saved: Dictionary
@@ -52,6 +53,18 @@ func _initialize() -> void:
 	assert(not stalled.advance(0), "must stop prediction at window")
 	print("PASS snapshot, restore, replay, duplicate inputs, bounded prediction; checksum=", expected)
 	quit()
+
+func _test_content_selection() -> void:
+	var sim := Sim.new()
+	assert(sim.characters == ["leonidas", "tesla"], "default fighter IDs must be stable strings")
+	assert(sim.set_fighters(["tesla", "leonidas"]) == OK)
+	assert(sim.characters == ["tesla", "leonidas"])
+	sim.content.fighter("tesla").health = 137
+	sim.reset()
+	assert(sim.state.fighters[0].health == 137, "reset must use configured health")
+	assert(sim.set_fighters(["tesla", "unknown"]) == ERR_DOES_NOT_EXIST, "unknown fighter reference must fail")
+	assert(sim.characters == ["tesla", "leonidas"], "invalid selection must not change fighters")
+	print("PASS stable fighter IDs and configured reset statistics")
 
 func input_at(tick: int, player: int) -> int:
 	return (1 if (tick + player * 37) % 80 < 40 else 2) | (4 if tick % 61 == 0 else 0)

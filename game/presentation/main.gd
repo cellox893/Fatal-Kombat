@@ -16,7 +16,7 @@ var desyncs: int = 0
 var frame_ms: float = 0.0
 var frame_peak: float = 0.0
 var stalled_at: int = 0
-var characters: Array = [0, 1]
+var characters: Array[String] = ["leonidas", "tesla"]
 var room_label := Label.new()
 var room_code: String = ""
 var next_web_diagnostic_at: int = 0
@@ -31,7 +31,10 @@ func _ready() -> void:
 	net.packet.connect(_packet)
 	net.connected.connect(func() -> void:
 		session.local_player = net.slot
-		session.sim.characters = characters.duplicate()
+		if session.sim.set_fighters(characters) != OK:
+			running = false
+			notice.text = "Contenuti combattimento non validi."
+			return
 		running = true
 		notice.text = "WebRTC connesso · frecce / A D per muoverti, spazio salto, J attacco leggero")
 	var panel := VBoxContainer.new()
@@ -89,7 +92,9 @@ func _room(data: Dictionary) -> void:
 	room_code = str(data.code)
 	room_label.text = "STANZA  " + str(data.code) + "   •   Sei P" + str(int(data.slot) + 1)
 	for i in range(data.players.size()):
-		characters[i] = 0 if data.players[i].character == "leonidas" else 1
+		var fighter_id := str(data.players[i].character)
+		if session.sim.content.has_fighter(fighter_id):
+			characters[i] = fighter_id
 		room_label.text += "   |   P%d: %s" % [i + 1, "pronto" if data.players[i].ready else "in attesa"]
 	start_button.disabled = bool(data.players[int(data.slot)].ready)
 
@@ -176,8 +181,9 @@ func _draw() -> void:
 	draw_line(Vector2(40, 551), Vector2(1080, 551), Color("d6ac66"), 3)
 	for i in range(2):
 		var fighter: Dictionary = session.sim.state.fighters[i]
-		var id: int = characters[i]
-		var color := Color(str(session.sim.content.fighters[id].color))
+		var fighter_id: String = characters[i]
+		var definition: Dictionary = session.sim.content.fighter(fighter_id)
+		var color := Color(str(definition.color))
 		var pos := Vector2(int(fighter.x), int(fighter.y))
 		var facing: float = float(fighter.facing)
 		var sway: float = sin(Time.get_ticks_msec() * 0.004 + i) * 2
@@ -186,7 +192,7 @@ func _draw() -> void:
 		draw_line(pos + Vector2(13, 0), pos + Vector2(8, -35), color, 10)
 		draw_rect(Rect2(pos + Vector2(-17, -79 + sway), Vector2(34, 47)), color.darkened(0.3))
 		draw_circle(pos + Vector2(0, -96 + sway), 15, color)
-		if id == 0:
+		if fighter_id == "leonidas":
 			draw_circle(pos + Vector2(23 * facing, -57), 24, color)
 			draw_circle(pos + Vector2(23 * facing, -57), 17, color.darkened(0.35))
 			draw_line(pos + Vector2(-22 * facing, -20), pos + Vector2(-22 * facing, -125), color, 3)
@@ -196,7 +202,7 @@ func _draw() -> void:
 		draw_rect(Rect2(pos + Vector2(-30, -140), Vector2(60, 5)), Color("442222"))
 		draw_rect(Rect2(pos + Vector2(-30, -140), Vector2(60 * float(fighter.health) / 100.0, 5)), color)
 		if session.sim.attack_active(fighter):
-			var move: Dictionary = session.sim.content.moves[fighter.move]
+			var move: Dictionary = session.sim.content.move(str(fighter.move))
 			var offset: float = 0.0 if facing > 0 else -float(move.reach)
 			draw_rect(Rect2(pos + Vector2(offset, -float(move.top)), Vector2(float(move.reach), float(move.top) - float(move.bottom))), Color(1, 0.7, 0.2, 0.5))
 		if Input.is_physical_key_pressed(KEY_H):
