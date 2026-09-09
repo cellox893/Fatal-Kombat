@@ -21,6 +21,11 @@ test('private room, version gate, ready, relay, full room and disconnect', async
   await request(b,{type:'ready',character:'tesla',ready:true});await connected;
   const relayed=new Promise(resolve=>b.on('message',raw=>{const m=JSON.parse(raw);if(m.type==='sdp') resolve(m);}));a.send(JSON.stringify({type:'sdp',kind:'offer',sdp:'test'}));
   assert.equal((await relayed).sdp,'test');
+  const relayedIce=new Promise(resolve=>b.on('message',raw=>{const m=JSON.parse(raw);if(m.type==='ice') resolve(m);}));
+  a.send(JSON.stringify({type:'ice',mid:'0',index:0,candidate:'candidate:1 1 udp 1 127.0.0.1 9 typ host'}));
+  assert.equal((await relayedIce).candidate,'candidate:1 1 udp 1 127.0.0.1 9 typ host');
+  const completed=new Promise(resolve=>b.on('message',raw=>{const m=JSON.parse(raw);if(m.type==='ice-complete') resolve(m);}));
+  a.send(JSON.stringify({type:'ice-complete'})); assert.equal((await completed).type,'ice-complete');
   const closed=once(a,'message'); b.close();assert.match(JSON.parse((await closed)[0]).message,/disconnesso/);
  } finally {clients.forEach(c=>c.terminate());app.close();}
 });

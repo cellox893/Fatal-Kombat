@@ -19,6 +19,7 @@ var stalled_at: int = 0
 var characters: Array = [0, 1]
 var room_label := Label.new()
 var room_code: String = ""
+var next_web_diagnostic_at: int = 0
 
 func _ready() -> void:
 	add_child(net)
@@ -148,11 +149,22 @@ func _check_hashes() -> void:
 func _process(delta: float) -> void:
 	frame_ms = delta * 1000.0
 	frame_peak = maxf(frame_peak, frame_ms)
-	telemetry.text = "FPS %d   •   frame %.1f ms / picco %.1f ms   •   tick %d / confermato %d\nRTT %d ms   •   rollback %d / tick risimulati %d   •   desync %d   •   finestra 12 tick" % [
+	if OS.has_feature("web") and Time.get_ticks_msec() >= next_web_diagnostic_at:
+		next_web_diagnostic_at = Time.get_ticks_msec() + 250
+		var raw: Variant = JavaScriptBridge.eval("JSON.stringify(window.fatalLabRtc || {})")
+		var data: Variant = JSON.parse_string(str(raw))
+		if data is Dictionary:
+			net.browser_diagnostic = data
+	var latest_event: String = net.diagnostic_events.back() if not net.diagnostic_events.is_empty() else "—"
+	var browser_states: String = ""
+	if not net.browser_diagnostic.is_empty():
+		browser_states = " · browser ice %s / conn %s" % [str(net.browser_diagnostic.get("iceConnectionState", "—")), str(net.browser_diagnostic.get("connectionState", "—"))]
+	telemetry.text = "FPS %d   •   frame %.1f ms / picco %.1f ms   •   tick %d / confermato %d\nRTT %d ms   •   rollback %d / tick risimulati %d   •   desync %d   •   finestra 12 tick\nWebRTC: %s%s\nEvento: %s" % [
 		Engine.get_frames_per_second(), frame_ms, frame_peak, session.sim.state.tick,
-		session.confirmed, net.rtt, session.rollbacks, session.resimulated, desyncs]
+		session.confirmed, net.rtt, session.rollbacks, session.resimulated, desyncs,
+		net.webrtc_summary(), browser_states, latest_event]
 	if OS.has_feature("web"):
-		JavaScriptBridge.eval("window.fatalLab = " + JSON.stringify({"room": room_code, "status": notice.text, "tick": session.sim.state.tick, "confirmed": session.confirmed, "rollback": session.rollbacks, "desyncs": desyncs, "running": running, "checksum": session.sim.checksum(), "health": [session.sim.state.fighters[0].health, session.sim.state.fighters[1].health], "x": session.sim.state.fighters[net.slot].x, "localCandidates": net.local_candidate_count, "remoteCandidates": net.remote_candidate_count}))
+		JavaScriptBridge.eval("window.fatalLab = " + JSON.stringify({"room": room_code, "status": notice.text, "tick": session.sim.state.tick, "confirmed": session.confirmed, "rollback": session.rollbacks, "desyncs": desyncs, "running": running, "checksum": session.sim.checksum(), "health": [session.sim.state.fighters[0].health, session.sim.state.fighters[1].health], "x": session.sim.state.fighters[net.slot].x, "localCandidates": net.local_candidate_count, "remoteCandidates": net.remote_candidate_count, "localCandidateTypes": net.local_candidate_types, "remoteCandidateTypes": net.remote_candidate_types, "iceGatheringState": net.ice_gathering_state, "iceConnectionState": net.ice_connection_state, "connectionState": net.connection_state, "iceCompleteLocal": net.local_ice_complete_sent, "iceCompleteRemote": net.remote_ice_complete_received, "events": net.diagnostic_events, "browser": net.browser_diagnostic}))
 	queue_redraw()
 
 func _draw() -> void:

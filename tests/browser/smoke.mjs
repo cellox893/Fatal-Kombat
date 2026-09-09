@@ -25,7 +25,11 @@ try {
  await a.keyboard.up('KeyJ');
  await a.waitForFunction(()=>window.fatalLab.confirmed>120);
  const states=await Promise.all([a.evaluate(()=>window.fatalLab),b.evaluate(()=>window.fatalLab)]);
- assert(states.every(s=>s.running && s.desyncs===0));assert.equal(errors.length,0,errors.join('\n'));
+ assert(states.every(s=>s.running && s.desyncs===0));
+ assert(states.every(s=>s.iceGatheringState==='complete' && s.iceCompleteLocal && s.iceCompleteRemote));
+ assert(states.every(s=>s.browser.config.iceTransportPolicy==='all' && s.browser.iceConnectionState==='connected' && s.browser.connectionState==='connected'));
+ assert(states.every(s=>s.browser.events.some(event=>event.startsWith('onicecandidate=')) && s.browser.events.some(event=>event==='onicecandidate-end=complete')));
+ assert.equal(errors.length,0,errors.join('\n'));
  console.log('PASS two Chromium contexts, Godot WebRTC movement and melee damage',states);
  await a.screenshot({path:'build/lab-connected.png'});
  await b.close();await a.waitForFunction(()=>!window.fatalLab.running);

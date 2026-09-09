@@ -48,9 +48,10 @@ export function createSignaling({port = 8001, host = '0.0.0.0', iceServers = DEF
             if(room.peers.length === 2 && room.peers.every(p=>p.ready)) {
               room.started=true; room.peers.forEach((p, slot)=>send(p,{type:'connect',slot}));
             }
-          } else if(['sdp','ice'].includes(m.type) && room.started) {
+          } else if(['sdp','ice','ice-complete'].includes(m.type) && room.started) {
             if(m.type === 'sdp' && (!['offer','answer'].includes(m.kind) || typeof m.sdp !== 'string')) return error('SDP non valido');
             if(m.type === 'ice' && (typeof m.mid !== 'string' || !Number.isInteger(m.index) || typeof m.candidate !== 'string')) return error('ICE non valido');
+            if(m.type === 'ice-complete' && Object.keys(m).some(key => key !== 'type')) return error('Fine ICE non valida');
             room.peers.filter(p=>p!==ws).forEach(p=>send(p,m));
           }
         } else error('Entra prima in una stanza');

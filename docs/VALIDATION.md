@@ -92,3 +92,13 @@ Il signaling ora consegna come default il solo STUN `stun:stun.cloudflare.com:34
 - `scripts/test.sh`: passata dopo la modifica (simulazione, signaling e WebRTC nativo).
 - Build Web: esportata con successo.
 - `node tests/browser/smoke.mjs`: passato contro la build aggiornata; due contesti Chromium hanno scambiato 2 candidati locali/remoti ciascuno, raggiunto WebRTC connesso, movimento e danno con desync 0. È un collaudo nello stesso Codespace, non due dispositivi fisici sulla LAN dell'utente.
+
+## Diagnostica ICE per test LAN — 2026-09-09
+
+Per il web, la configurazione effettiva della `RTCPeerConnection` dichiara `iceTransportPolicy: "all"`; non esiste una policy `relay`. Il canale dati negoziato viene creato prima dell'offerta; listener SDP/ICE sono già registrati prima dell'offerta, candidati remoti arrivati prima della SDP restano accodati, e l'evento di raccolta completa viene ora inoltrato come `ice-complete` diagnostico. Il proxy browser usa `wss://<host-8000>/signaling`; soltanto il proxy usa `ws://127.0.0.1:8001` internamente.
+
+La UI e `window.fatalLab` riportano gathering/connection state, contatori e tipi ICE locali/remoti, fine raccolta locale/remota ed eventi recenti. Il preview inserisce inoltre una sonda prima del runtime Godot, che registra sull'oggetto `RTCPeerConnection` reale `iceGatheringState`, `iceConnectionState`, `connectionState`, ogni `onicecandidate` (incluso il candidato nullo finale) e `onicecandidateerror` nel console log con prefisso `Fatal Kombat WebRTC`.
+
+- `scripts/test.sh`: passato.
+- Build Web: esportata con successo.
+- `node tests/browser/smoke.mjs`: passato con asserzioni su `iceTransportPolicy: all`, candidati `host` e `srflx`, evento finale ICE, gathering `complete`, stati browser ICE/connection `connected`, `ice-complete` nei due versi, movimento/danno e desync 0. Non sostituisce ancora la prova reale sul Mac/LAN dell'utente.

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import {createReadStream} from 'node:fs';
+import {readFile} from 'node:fs/promises';
 import {realpath, stat} from 'node:fs/promises';
 import {resolve, sep, extname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
@@ -8,6 +9,35 @@ import {WebSocket, WebSocketServer} from 'ws';
 const defaultRoot = fileURLToPath(new URL('../../build/web/', import.meta.url));
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
   '.wasm':'application/wasm','.pck':'application/octet-stream','.png':'image/png','.svg':'image/svg+xml'};
+
+// Runs before Godot's generated index.js creates the browser RTCPeerConnection.
+// It observes the real browser object without replacing Godot's handlers.
+const WEBRTC_PROBE = String.raw`<script>
+(() => {
+  const store = window.fatalLabRtc = window.fatalLabRtc || {events: []};
+  const Native = window.RTCPeerConnection;
+  if (!Native || store.installed) return;
+  const log = (event, value) => { const item = event + (value ? '=' + value : ''); store.events.push(item); if (store.events.length > 16) store.events.shift(); console.info('[Fatal Kombat WebRTC]', item); };
+  function Probe(config) {
+    const pc = new Native(config);
+    store.installed = true; store.created = true; store.config = config;
+    const type = value => ((value || '').match(/ typ ([^ ]+)/) || [])[1] || 'other';
+    const sync = () => { store.iceGatheringState = pc.iceGatheringState; store.iceConnectionState = pc.iceConnectionState; store.connectionState = pc.connectionState; };
+    pc.addEventListener('icegatheringstatechange', () => { sync(); log('iceGatheringState', store.iceGatheringState); });
+    pc.addEventListener('iceconnectionstatechange', () => { sync(); log('iceConnectionState', store.iceConnectionState); });
+    pc.addEventListener('connectionstatechange', () => { sync(); log('connectionState', store.connectionState); });
+    pc.addEventListener('icecandidate', event => log(event.candidate ? 'onicecandidate' : 'onicecandidate-end', event.candidate ? type(event.candidate.candidate) : 'complete'));
+    pc.addEventListener('icecandidateerror', event => { store.iceCandidateError = String(event.errorCode || '') + ' ' + String(event.errorText || ''); log('onicecandidateerror', store.iceCandidateError.trim()); });
+    sync(); log('created');
+    return pc;
+  }
+  Probe.prototype = Native.prototype;
+  Object.setPrototypeOf(Probe, Native);
+  window.RTCPeerConnection = Probe;
+})();
+</script>`;
+
+const withWebRtcProbe = html => html.replace('<script src="index.js"></script>', WEBRTC_PROBE + '\n\t\t<script src="index.js"></script>');
 
 // Same-origin browser entrypoint. Lobby remains a separate process; no game inputs use this proxy.
 export function createPreview({port=8000, host='0.0.0.0', root=defaultRoot,
@@ -23,6 +53,12 @@ export function createPreview({port=8000, host='0.0.0.0', root=defaultRoot,
       if(!file.startsWith(base+sep)) {res.writeHead(403);res.end();return;}
       const info=await stat(file);
       if(!info.isFile()) {res.writeHead(404);res.end();return;}
+      if(extname(file)==='.html') {
+        const body=withWebRtcProbe(await readFile(file,'utf8'));
+        res.writeHead(200,{'Content-Type':mime['.html'],'Content-Length':Buffer.byteLength(body)});
+        if(req.method==='HEAD') {res.end();return;}
+        res.end(body);return;
+      }
       res.writeHead(200,{'Content-Type':mime[extname(file)] || 'application/octet-stream','Content-Length':info.size});
       if(req.method==='HEAD') {res.end();return;}
       const stream=createReadStream(file);
