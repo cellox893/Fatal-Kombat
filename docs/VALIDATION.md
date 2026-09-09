@@ -70,3 +70,17 @@ Verifiche della correzione:
 - Risposta HTTP preview controllata: `Cache-Control: no-store`.
 
 La preview attiva è ora `node services/signaling/preview.mjs` su 8000; `node server.mjs` continua su 8001. Build desktop generate al checkpoint non rigenerate con questa correzione: il codice nativo aggiornato è stato eseguito nel test browser/Linux. Necessario riprovare sul Mac dell'utente con due finestre visibili. TURN, reti reali e FPS rimangono non validati.
+
+## Ripresa M1 — 2026-09-09, COMBAT LAB 02
+
+Primo incremento: attacco leggero condiviso, hit/hurtbox intere, danno, barra salute e stato mossa negli snapshot/checksum. Compatibilità lab-2. Rimangono esclusi pesante, parata, stun, combo, speciali, KO e round; a salute zero la simulazione continua.
+
+- Suite `scripts/test.sh` passata: startup senza danno, impatto simultaneo, singolo impatto, tasto mantenuto, distanza e separazione verticale, snapshot durante startup e rollback di attacchi con ritardi 2/5/9 tick. Passati anche i precedenti test movimento/rete sintetica, lobby/proxy e WebRTC nativo.
+- Nuovo checksum replay movimento 600 tick: `ac2cf9933e9ba6ec109aafee4f8948fd3d5aefe77da5bb9b408bb4c0fd184803`. Cambiato perché lo stato include direzione e mossa.
+- Build web e Linux rigenerate con successo. La build macOS del checkpoint è precedente e incompatibile con lab-2; rigenerarla prima di usarla con questi client.
+- Primo tentativo nella sandbox fallito per socket e scrittura impostazioni Godot; test/build rieseguiti con autorizzazione nel Codespace.
+- Preview Node 8000 e signaling 8001 riavviati. Nessuna modifica alla visibilità delle porte.
+- Le verifiche sintetiche RTT 50/100/150 ms rimangono sul replay di movimento; il nuovo scenario di combattimento copre ritardo degli input, senza simulazione aggiuntiva di perdita/jitter.
+- `tests/browser/smoke.mjs` passato: due Chromium nello stesso Codespace, movimento fino a portata, J via tastiera, salute [100, 92] su entrambi, desync 0, 26 rollback osservati sul secondo client e arresto dopo disconnessione. Non prova reti diverse.
+- `tests/browser/cross-platform.mjs` passato: browser/Linux, tick confermato 184 e desync 0. Questo test rimane sul movimento; non verifica uno scambio di colpi web/native.
+- `tests/browser/signaling-errors.mjs` passato: timeout lobby silenziosa e chiusura 1011.

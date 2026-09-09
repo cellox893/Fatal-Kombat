@@ -3,6 +3,7 @@ const Sim = preload("res://simulation/simulation.gd")
 const Rollback = preload("res://network/rollback.gd")
 
 func _initialize() -> void:
+	_test_combat()
 	var baseline := Sim.new()
 	var saved: Dictionary
 	for tick in range(600):
@@ -78,3 +79,50 @@ func _test_network(rtt_ms: int, expected: String) -> void:
 	assert(session.confirmed == 599)
 	assert(session.sim.checksum() == expected, "jitter/loss replay mismatch")
 	print("PASS synthetic RTT=", rtt_ms, "ms, jitter +/-1 tick, 10% packet loss, reordering/redundancy")
+
+
+func _test_combat() -> void:
+	var sim := Sim.new()
+	sim.state.fighters[1].x = 360
+	for tick in range(5):
+		sim.step([8, 8])
+	assert(sim.state.fighters[0].health == 100, "startup must not damage")
+	var saved: Dictionary = sim.snapshot()
+	sim.step([8, 8])
+	assert(sim.state.fighters[0].health == 92 and sim.state.fighters[1].health == 92, "simultaneous hits must trade")
+	for tick in range(30):
+		sim.step([8, 8])
+	assert(sim.state.fighters[0].health == 92, "one hit per move; holding must not repeat")
+	var expected: String = sim.checksum()
+	sim.restore(saved)
+	for tick in range(31):
+		sim.step([8, 8])
+	assert(sim.checksum() == expected, "combat snapshot replay")
+	var distant := Sim.new()
+	for tick in range(20):
+		distant.step([8, 0])
+	assert(distant.state.fighters[1].health == 100, "out of reach")
+	var airborne := Sim.new()
+	airborne.state.fighters[1].x = 360
+	airborne.state.fighters[1].y = 300
+	for tick in range(9):
+		airborne.step([8, 0])
+	assert(airborne.state.fighters[1].health == 100, "vertical miss")
+	for delay in [2, 5, 9]:
+		var session := Rollback.new()
+		var reference := Sim.new()
+		session.sim.state.fighters[1].x = 360
+		reference.state.fighters[1].x = 360
+		for tick in range(80):
+			var bits: int = 8 if tick % 25 == 0 else 0
+			reference.step([bits, bits])
+			if tick >= delay:
+				session.receive(tick - delay, 8 if (tick - delay) % 25 == 0 else 0)
+			assert(session.advance(bits))
+		for tick in range(80 - delay, 80):
+			session.receive(tick, 8 if tick % 25 == 0 else 0)
+		assert(session.failure.is_empty())
+		assert(session.sim.checksum() == reference.checksum(), "combat rollback mismatch")
+		assert(session.rollbacks > 0)
+		assert(reference.state.fighters[0].health < 100)
+	print("PASS melee startup, trade, single hit, reach, vertical miss, snapshot and combat rollback")

@@ -27,6 +27,8 @@ Lo stato dettagliato delle verifiche è in docs/VALIDATION.md. Questa è una pro
 
 ## M1 — vertical slice di combattimento
 
+Primo incremento 2026-09-09: leggero condiviso dai due personaggi, tempi e collisioni nei contenuti, danno, salute visibile e replay/rollback del combattimento. Compatibilità lab-2, build COMBAT LAB 02. M1 resta aperta; prossimo incremento: pesante e parata, poi concatenamento/proiettile e stun.
+
 Una coppia di mosse leggere/pesanti, parata, una concatenazione e un proiettile con startup/active/recovery e hit/hurtbox indipendenti dalle pose. Risorse, cooldown, stun e proiettili nel replay. Input adapter tastiera/controller e rimappatura persistente. Timing/pacing della sessione e test rete con RTT 50/100/150 ms, jitter/perdita, browser/desktop. Uscita: scambio di colpi leggibile online e checksum identici anche dopo rollback con proiettili.
 
 ## M2 — prima versione giocabile completa confermata

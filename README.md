@@ -1,13 +1,13 @@
 # Fatal Kombat
 
-Prototipo di picchiaduro storico 2D online in Godot. Questa prima milestone è un **laboratorio tecnico**: arena, due silhouette selezionabili, movimento/salto, stanza privata, pronto, WebRTC e rollback di prova. Attacchi, speciali, round e rivincita sono nella roadmap, non ancora giocabili.
+Prototipo di picchiaduro storico 2D online in Godot. Questa prima milestone è un **laboratorio tecnico**: arena, due silhouette selezionabili, movimento/salto, stanza privata, pronto, WebRTC e rollback di prova. Ora include un primo attacco leggero con danno e rollback. Pesante, parata, speciali, round e rivincita restano nella roadmap.
 
 ## Aprire l'anteprima nel Codespace attuale
 
 1. Apri [Fatal Kombat, porta 8000](https://humble-carnival-5649pq6qvxf79xr-8000.app.github.dev) e completa l'eventuale accesso GitHub **in ciascun browser**. Se il Codespace cambia nome, usa l'URL nel pannello **Ports**.
-2. Verifica il titolo **NETWORK LAB 01.1**; dopo un aggiornamento ricarica entrambe le finestre. Il campo endpoint deve finire con **`-8000.app.github.dev/signaling`**. Il browser ora usa un solo dominio: non è più necessario autenticarsi separatamente sulla 8001.
+2. Verifica il titolo **COMBAT LAB 02**; dopo un aggiornamento ricarica entrambe le finestre. Il campo endpoint deve finire con **`-8000.app.github.dev/signaling`**. Il browser ora usa un solo dominio: non è più necessario autenticarsi separatamente sulla 8001.
 3. Primo client: **Crea stanza privata**, copia il codice mostrato. Secondo client, altra finestra/browser: inserisci il codice e premi **Entra**. Scegli Leonida o Tesla su ciascun client, poi entrambi **Pronto**. Usa due finestre **affiancate e visibili**, non schede nascoste: il browser può sospendere l'elaborazione Godot in background.
-4. Attendi `WebRTC connesso`. Clicca l'arena per togliere il focus dai campi. **A/D o frecce**: movimento, **spazio**: salto; **H**: rettangoli diagnostici provvisori. Il peer deve vedere gli stessi movimenti. Tick e confermato avanzano, RTT si aggiorna, desync deve restare 0. I tick correnti dei due client possono differire: i checksum vengono confrontati solo a tick confermati uguali.
+4. Attendi `WebRTC connesso`. Clicca l'arena per togliere il focus dai campi. **A/D o frecce**: movimento, **spazio**: salto; **J**: attacco leggero (rilascia prima del successivo); avvicinati al rivale per colpirlo. **H**: hurtbox. Barre sopra i personaggi: salute; rettangolo arancio: fase attiva del colpo. A salute zero il laboratorio continua: KO e round non sono implementati. Il peer deve vedere gli stessi movimenti. Tick e confermato avanzano, RTT si aggiorna, desync deve restare 0. I tick correnti dei due client possono differire: i checksum vengono confrontati solo a tick confermati uguali.
 5. Chiudi un client: l'altro deve segnalare la disconnessione e fermarsi. Per una nuova stanza ricarica entrambi. Non c'è ancora rivincita.
 
 Le porte restano private. Un amico senza accesso al forwarding può non aprire questi URL: il codice stanza non concede accesso GitHub. Nessuna porta è stata resa pubblica. Con ICE vuoto la connessione è stata verificata solo sulla stessa macchina; per reti differenti serve completare STUN/TURN e accesso all'hosting, vedi [NETWORKING](docs/NETWORKING.md).
@@ -65,4 +65,4 @@ Artefatti: `build/linux/` include libreria WebRTC e PCK; `build/macos/fatal-komb
 - [Versioni](docs/VERSIONS.md), [asset e licenze](docs/ASSETS.md), [rete e credenziali mancanti](docs/NETWORKING.md).
 - [Istruzioni per lo sviluppo](AGENTS.md).
 
-Prossima milestone: mosse con tempi/hitbox, parata, concatenamento e primo proiettile sottoposti a rollback, insieme a pacing e prove reali web/desktop su reti diverse. Il primo prodotto completo richiederà anche due speciali per personaggio, animazioni complete, controller/rimappatura e ciclo round/risultato/rivincita.
+Prossimo passo M1: pesante, parata, concatenamento e primo proiettile sottoposti a rollback, insieme a pacing e prove reali web/desktop su reti diverse. Il primo prodotto completo richiederà anche due speciali per personaggio, animazioni complete, controller/rimappatura e ciclo round/risultato/rivincita.

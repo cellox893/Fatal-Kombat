@@ -1,1 +1,43 @@
-{"arena":{"id":"observatory","left":70,"right":1050,"floor":550},"fighters":[{"id":"leonidas","label":"LEONIDA","speed":4,"jump":-16,"health":100,"color":"dfad61"},{"id":"tesla","label":"NIKOLA TESLA","speed":5,"jump":-17,"health":100,"color":"63dce8"}]}
+{
+  "arena": {
+    "id": "observatory",
+    "left": 70,
+    "right": 1050,
+    "floor": 550
+  },
+  "fighters": [
+    {
+      "id": "leonidas",
+      "label": "LEONIDA",
+      "speed": 4,
+      "jump": -16,
+      "health": 100,
+      "color": "dfad61",
+      "light": "light",
+      "hurt_width": 24,
+      "hurt_height": 113
+    },
+    {
+      "id": "tesla",
+      "label": "NIKOLA TESLA",
+      "speed": 5,
+      "jump": -17,
+      "health": 100,
+      "color": "63dce8",
+      "light": "light",
+      "hurt_width": 24,
+      "hurt_height": 113
+    }
+  ],
+  "moves": {
+    "light": {
+      "startup": 5,
+      "active": 3,
+      "recovery": 12,
+      "damage": 8,
+      "reach": 72,
+      "bottom": 30,
+      "top": 90
+    }
+  }
+}

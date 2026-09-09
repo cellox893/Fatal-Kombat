@@ -18,12 +18,15 @@ try {
  await Promise.all([a.waitForFunction(()=>window.fatalLab.running,null,{timeout:35000}),b.waitForFunction(()=>window.fatalLab.running,null,{timeout:35000})]);
  const x=await a.evaluate(()=>window.fatalLab.x);
  await a.keyboard.down('KeyD');
- await a.waitForFunction(start=>window.fatalLab.x>start+20,x);
+ await a.waitForFunction(start=>window.fatalLab.x>start+450,x);
  await a.keyboard.up('KeyD');
+ await a.keyboard.down('KeyJ');
+ await Promise.all([a.waitForFunction(()=>window.fatalLab.health[1]===92),b.waitForFunction(()=>window.fatalLab.health[1]===92)]);
+ await a.keyboard.up('KeyJ');
  await a.waitForFunction(()=>window.fatalLab.confirmed>120);
  const states=await Promise.all([a.evaluate(()=>window.fatalLab),b.evaluate(()=>window.fatalLab)]);
  assert(states.every(s=>s.running && s.desyncs===0));assert.equal(errors.length,0,errors.join('\n'));
- console.log('PASS two Chromium contexts, Godot WebRTC input exchange',states);
+ console.log('PASS two Chromium contexts, Godot WebRTC movement and melee damage',states);
  await a.screenshot({path:'build/lab-connected.png'});
  await b.close();await a.waitForFunction(()=>!window.fatalLab.running);
  console.log('PASS disconnect stops simulation');

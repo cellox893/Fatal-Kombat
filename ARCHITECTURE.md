@@ -10,21 +10,21 @@
 - `services/signaling/preview.mjs`: serve la build web su 8000 e inoltra `/signaling` al processo 8001. Stessa origine della pagina per WSS, senza inoltrare credenziali browser; coda e backpressure limitate. Non trasporta input di combattimento.
 - `services/signaling`: Node/ws, stato volatile delle stanze, versione, pronto, inoltro SDP/ICE. Non esegue combattimento e non è autorevole.
 
-## Protocollo lab-1
+## Protocollo lab-2
 
-Il server assegna slot 0/1 nell'ordine d'ingresso. Codice casuale di 8 cifre esadecimali, due peer massimi. Handshake `lab-1:SHA256(bytes contenuti)` prima dell'ingresso; aggiornare lab-N a ogni cambiamento incompatibile della simulazione/protocollo. In futuro il build manifest sarà generato automaticamente da codice e contenuti.
+Il server assegna slot 0/1 nell'ordine d'ingresso. Codice casuale di 8 cifre esadecimali, due peer massimi. Handshake `lab-2:SHA256(bytes contenuti)` prima dell'ingresso; aggiornare lab-N a ogni cambiamento incompatibile della simulazione/protocollo. In futuro il build manifest sarà generato automaticamente da codice e contenuti.
 
 Dopo entrambi pronti, lo slot 0 crea l'offerta. I client accodano ICE finché esiste la descrizione remota. Configurazione ICE identica distribuita dalla lobby. Apertura del canale avvia il tick locale 0: il peer in anticipo può predire solo 12 tick. Non è ancora presente un algoritmo completo di sincronizzazione degli orologi: macchine che girano a velocità diversa possono fermarsi e riprendere; introdurre pacing nella prossima milestone.
 
-Input: bit 1 sinistra, 2 destra, 4 salto; 8 riservato. Ogni pacchetto include coppie `[tick, bits]` degli ultimi 120 tick, tick confermato e checksum relativo. Reinvio anche durante lo stallo; gestione duplicati identici, rifiuto conflitti, input fuori range e troppo futuri. La ridondanza copre perdita e riordino, non rende la rete affidabile senza limiti. Snapshot e input vengono potati oltre 120 tick. La predizione si ferma dopo 12 tick non confermati (200 ms); 5 secondi di stallo/interruzione fermano la sessione. Una desincronizzazione ferma la prova con tick diagnostico.
+Input: bit 1 sinistra, 2 destra, 4 salto; 8 attacco leggero. Ogni pacchetto include coppie `[tick, bits]` degli ultimi 120 tick, tick confermato e checksum relativo. Reinvio anche durante lo stallo; gestione duplicati identici, rifiuto conflitti, input fuori range e troppo futuri. La ridondanza copre perdita e riordino, non rende la rete affidabile senza limiti. Snapshot e input vengono potati oltre 120 tick. La predizione si ferma dopo 12 tick non confermati (200 ms); 5 secondi di stallo/interruzione fermano la sessione. Una desincronizzazione ferma la prova con tick diagnostico.
 
 Checksum solo su tick con input di entrambi confermati. Canonicalizzazione con array in ordine fisso, interi e SHA-256. Posizioni intere adesso; prima delle mosse introdurre sottounità fisse se necessarie, senza float nella simulazione. Niente PhysicsBody2D. Casualità: seed riservato nello stato, nessun uso casuale nella prova. Prima di introdurla scegliere e testare un PRNG intero con overflow definito.
 
 ## Stato e rollback
 
-Snapshot include tick, seed, posizioni, velocità, input precedente, salute, risorse, cooldown, effetti e contenitori per proiettili/oggetti. Attualmente solo movimento, salto e cooldown hanno un aggiornamento; i contenitori vuoti non significano che le abilità siano implementate. La selezione personaggi è configurazione immutabile della sessione. L'arena usa per ora il piano fisso y=550, da spostare interamente nella definizione contenuti quando verranno aggiunte arene.
+Snapshot include tick, seed, posizioni, velocità, input precedente, salute, risorse, cooldown, effetti e contenitori per proiettili/oggetti. Ora movimento, salto, cooldown e attacco leggero hanno un aggiornamento; i contenitori vuoti non significano che le abilità siano implementate. La selezione personaggi è configurazione immutabile della sessione. Il piano viene letto da arena.floor nei contenuti.
 
-La presentazione legge lo stato corrente; non emette audio o particelle durante `step`. Quando verranno introdotti, gli eventi avranno ID deterministici `(round,tick,entity,sequence)` e saranno consumati una sola volta, con politica esplicita per gli effetti speculativi. Sostituire una posa non modifica collisioni o tempi. Il rettangolo H è un overlay dimensionale provvisorio, non una hurtbox già operativa.
+La presentazione legge lo stato corrente; non emette audio o particelle durante `step`. Quando verranno introdotti, gli eventi avranno ID deterministici `(round,tick,entity,sequence)` e saranno consumati una sola volta, con politica esplicita per gli effetti speculativi. Sostituire una posa non modifica collisioni o tempi. Il rettangolo H visualizza la hurtbox; il rettangolo arancio mostra la fase attiva. Collisioni intere nella simulazione, indipendenti dalle pose.
 
 ## Valutazione delle soluzioni (2026-09-08)
 
@@ -45,3 +45,10 @@ Leonida: scudo con finestra di contrattacco e avanzata protetta, punibili durant
 P2P permette al peer modificato di mentire sugli input e osservare lo stato. Codice privato e checksum non sono anticheat. Prima di ranked servono threat model, decisione su autorità/arbitraggio, sicurezza, identità e gestione risultati; nessuna classifica ora.
 
 Il futuro desktop condivide simulation e rollback. Isolare input, trasporto, storage e inviti dietro adapter quando servono. Steam richiede packaging per OS/architettura, GDExtension e licenze, firma/notarizzazione macOS, test controller/firewall/performance e integrazione Steamworks autorizzata; non è un export automatico. Nessun SDK Steam o account introdotto.
+
+
+## Primo incremento M1 — 2026-09-09
+
+Mossa con ID stabile `light`, referenziata dalle definizioni dei combattenti: startup 5, active 3, recovery 12 tick, danno 8. Il tick della pressione è il primo tick di startup. Il tasto mantenuto non ripete; movimento orizzontale e nuovo salto bloccati durante la mossa, gravità ancora attiva. Direzione congelata durante l'attacco, un solo impatto per attivazione, colpi simultanei scambiano danno. Snapshot/checksum includono direzione, ID mossa, tick mossa e impatto già avvenuto. Compatibilità portata a lab-2; forma dei pacchetti invariata.
+
+Questo incremento usa lo stesso leggero per entrambi. Mancano stun, parata, spinta/collisione fra corpi, KO, mosse pesanti e abilità distintive: non rappresenta M1 completa. A zero salute il laboratorio continua. Nessun effetto audio/evento introdotto.

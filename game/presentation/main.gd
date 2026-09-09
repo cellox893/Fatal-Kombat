@@ -32,14 +32,14 @@ func _ready() -> void:
 		session.local_player = net.slot
 		session.sim.characters = characters.duplicate()
 		running = true
-		notice.text = "WebRTC connesso · frecce / A D per muoverti, spazio per saltare")
+		notice.text = "WebRTC connesso · frecce / A D per muoverti, spazio salto, J attacco leggero")
 	var panel := VBoxContainer.new()
 	panel.position = Vector2(42, 26)
 	panel.size = Vector2(1036, 280)
 	panel.add_theme_constant_override("separation", 10)
 	add_child(panel)
 	var title := Label.new()
-	title.text = "FATAL KOMBAT   /   NETWORK LAB 01.1"
+	title.text = "FATAL KOMBAT   /   COMBAT LAB 02"
 	title.add_theme_font_size_override("font_size", 30)
 	panel.add_child(title)
 	var subtitle := Label.new()
@@ -98,6 +98,7 @@ func _physics_process(_delta: float) -> void:
 	var bits: int = int(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT))
 	bits |= int(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT)) * 2
 	bits |= int(Input.is_physical_key_pressed(KEY_SPACE)) * 4
+	bits |= int(Input.is_physical_key_pressed(KEY_J)) * 8
 	var tick: int = int(session.sim.state.tick)
 	if session.advance(bits):
 		outgoing[tick] = bits
@@ -151,7 +152,7 @@ func _process(delta: float) -> void:
 		Engine.get_frames_per_second(), frame_ms, frame_peak, session.sim.state.tick,
 		session.confirmed, net.rtt, session.rollbacks, session.resimulated, desyncs]
 	if OS.has_feature("web"):
-		JavaScriptBridge.eval("window.fatalLab = " + JSON.stringify({"room": room_code, "status": notice.text, "tick": session.sim.state.tick, "confirmed": session.confirmed, "rollback": session.rollbacks, "desyncs": desyncs, "running": running, "checksum": session.sim.checksum(), "x": session.sim.state.fighters[net.slot].x}))
+		JavaScriptBridge.eval("window.fatalLab = " + JSON.stringify({"room": room_code, "status": notice.text, "tick": session.sim.state.tick, "confirmed": session.confirmed, "rollback": session.rollbacks, "desyncs": desyncs, "running": running, "checksum": session.sim.checksum(), "health": [session.sim.state.fighters[0].health, session.sim.state.fighters[1].health], "x": session.sim.state.fighters[net.slot].x}))
 	queue_redraw()
 
 func _draw() -> void:
@@ -166,7 +167,7 @@ func _draw() -> void:
 		var id: int = characters[i]
 		var color := Color(str(session.sim.content.fighters[id].color))
 		var pos := Vector2(int(fighter.x), int(fighter.y))
-		var facing: float = 1.0 if i == 0 else -1.0
+		var facing: float = float(fighter.facing)
 		var sway: float = sin(Time.get_ticks_msec() * 0.004 + i) * 2
 		draw_circle(Vector2(pos.x, 553), 25, Color(0, 0, 0, 0.35))
 		draw_line(pos + Vector2(-10, 0), pos + Vector2(-8, -35), color, 10)
@@ -180,5 +181,11 @@ func _draw() -> void:
 		else:
 			draw_line(pos + Vector2(10 * facing, -72), pos + Vector2(35 * facing, -65 + sway), color, 7)
 			draw_arc(pos + Vector2(40 * facing, -65 + sway), 12, 0, TAU * 0.8, 12, color, 2)
+		draw_rect(Rect2(pos + Vector2(-30, -140), Vector2(60, 5)), Color("442222"))
+		draw_rect(Rect2(pos + Vector2(-30, -140), Vector2(60 * float(fighter.health) / 100.0, 5)), color)
+		if session.sim.attack_active(fighter):
+			var move: Dictionary = session.sim.content.moves[fighter.move]
+			var offset: float = 0.0 if facing > 0 else -float(move.reach)
+			draw_rect(Rect2(pos + Vector2(offset, -float(move.top)), Vector2(float(move.reach), float(move.top) - float(move.bottom))), Color(1, 0.7, 0.2, 0.5))
 		if Input.is_physical_key_pressed(KEY_H):
 			draw_rect(Rect2(pos + Vector2(-24, -113), Vector2(48, 113)), Color.GREEN, false, 1)
