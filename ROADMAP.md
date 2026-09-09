@@ -1,5 +1,13 @@
 # Roadmap verificabile
 
+## Refactoring fase 2 — 2026-09-09
+
+- [x] Locomozione e azione separate, enum interi e timer stun nello snapshot/checksum.
+- [x] Transizioni neutral/movimento/aria/attacco, stun temporanei e KO terminale fino al reset.
+- [x] Light preservata; test di divieti, durata stun, KO simultaneo e rollback con ritardi 2/5/9 tick.
+
+Hitstun/blockstun disponibili nel nucleo e testati; collegamento agli effetti delle mosse e comando parata restano futuri. Nessuna nuova mossa o animazione. Compatibilità lab-3, pacchetti invariati. Fase 3 da autorizzare separatamente.
+
 ## Checkpoint 2026-09-08
 
 Implementazione sospesa su richiesta dell’utente per salvare il lavoro. Build e test terminati; preview 8000 e signaling 8001 lasciati attivi. Nessuna nuova funzionalità nel turno di checkpoint. M0 ha una base tecnica verificata sulla stessa macchina, ma resta aperta fino ai collaudi reali.

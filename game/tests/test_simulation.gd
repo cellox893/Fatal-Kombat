@@ -3,6 +3,7 @@ const Sim = preload("res://simulation/simulation.gd")
 const Rollback = preload("res://network/rollback.gd")
 
 func _initialize() -> void:
+	_test_states()
 	_test_content_selection()
 	_test_combat()
 	var baseline := Sim.new()
@@ -53,6 +54,91 @@ func _initialize() -> void:
 	assert(not stalled.advance(0), "must stop prediction at window")
 	print("PASS snapshot, restore, replay, duplicate inputs, bounded prediction; checksum=", expected)
 	quit()
+
+func _test_states() -> void:
+	var sim := Sim.new()
+	var fighter: Dictionary = sim.state.fighters[0]
+	assert(fighter.action == Sim.Action.NEUTRAL and fighter.locomotion == Sim.Locomotion.IDLE)
+	sim.step([2, 0])
+	assert(fighter.locomotion == Sim.Locomotion.MOVING)
+	sim.step([0, 0])
+	assert(fighter.locomotion == Sim.Locomotion.IDLE)
+	sim.step([4, 0])
+	assert(fighter.locomotion == Sim.Locomotion.AIRBORNE and fighter.action == Sim.Action.NEUTRAL)
+	sim.step([0, 0])
+	sim.step([4, 0])
+	assert(fighter.vy == -13, "no second jump in air")
+	sim.step([8, 0])
+	assert(fighter.action == Sim.Action.ATTACK and fighter.locomotion == Sim.Locomotion.AIRBORNE)
+	var x: int = fighter.x
+	sim.step([6, 0])
+	assert(fighter.x == x and fighter.move_tick == 2, "attack forbids walking/jumping")
+	var before: String = sim.checksum()
+	assert(not sim.apply_stun(0, Sim.Action.BLOCKSTUN, 3))
+	assert(not sim.apply_stun(0, Sim.Action.HITSTUN, 0))
+	assert(not sim.apply_stun(-1, Sim.Action.HITSTUN, 3))
+	assert(sim.checksum() == before, "invalid transitions are atomic")
+	assert(sim.apply_stun(0, Sim.Action.HITSTUN, 3))
+	assert(fighter.move == "" and not sim.attack_active(fighter), "hitstun interrupts attack")
+	var saved: Dictionary = sim.snapshot()
+	for tick in range(3):
+		sim.step([14, 0])
+		assert(fighter.x == x and fighter.move == "")
+		assert(fighter.stun_ticks == 2 - tick)
+	assert(fighter.action == Sim.Action.NEUTRAL)
+	var expected: String = sim.checksum()
+	sim.restore(saved)
+	for tick in range(3):
+		sim.step([14, 0])
+	assert(sim.checksum() == expected, "stun snapshot replay")
+	sim.step([8, 0])
+	assert(sim.state.fighters[0].action == Sim.Action.NEUTRAL, "held attack is not buffered through stun")
+	for tick in range(40):
+		sim.step([0, 0])
+	assert(sim.state.fighters[0].locomotion == Sim.Locomotion.IDLE, "landing returns to idle")
+	assert(sim.apply_stun(0, Sim.Action.BLOCKSTUN, 2))
+	for tick in range(2):
+		sim.step([14, 0])
+	assert(sim.state.fighters[0].action == Sim.Action.NEUTRAL)
+	# Every new field must affect the canonical checksum.
+	for field: String in ["action", "locomotion", "stun_ticks"]:
+		var original: Dictionary = sim.snapshot()
+		before = sim.checksum()
+		sim.state.fighters[0][field] += 1
+		assert(sim.checksum() != before, field + " absent from checksum")
+		sim.restore(original)
+	# Delayed remote input crosses stun expiry, attack startup and simultaneous KO.
+	for stun_action: int in [Sim.Action.HITSTUN, Sim.Action.BLOCKSTUN]:
+		for delay: int in [2, 5, 9]:
+			var session := Rollback.new()
+			var reference := Sim.new()
+			for instance in [session.sim, reference]:
+				instance.state.fighters[1].x = 360
+				for player in range(2):
+					instance.state.fighters[player].health = 8
+					assert(instance.apply_stun(player, stun_action, 3))
+			for tick in range(40):
+				var bits: int = 8 if tick == 4 else 0
+				reference.step([bits, bits])
+				if tick >= delay:
+					session.receive(tick - delay, 8 if tick - delay == 4 else 0)
+				assert(session.advance(bits))
+			for tick in range(40 - delay, 40):
+				session.receive(tick, 0)
+			assert(session.rollbacks > 0 and session.failure.is_empty())
+			assert(session.sim.checksum() == reference.checksum(), "state transition rollback")
+			for player in range(2):
+				assert(reference.state.fighters[player].action == Sim.Action.KO, "lethal trade must KO both")
+				assert(not reference.apply_stun(player, Sim.Action.HITSTUN, 2))
+			var positions: Array = [reference.state.fighters[0].x, reference.state.fighters[1].x]
+			for tick in range(10):
+				reference.step([14, 13])
+			for player in range(2):
+				assert(reference.state.fighters[player].x == positions[player])
+				assert(reference.state.fighters[player].move == "")
+			reference.reset()
+			assert(reference.state.fighters[0].action == Sim.Action.NEUTRAL)
+	print("PASS locomotion/action transitions, forbidden inputs, stun expiry, KO, checksum and delayed rollback")
 
 func _test_content_selection() -> void:
 	var sim := Sim.new()

@@ -1,5 +1,13 @@
 # Checkpoint verifiche — 2026-09-08
 
+## Refactoring fase 2 — 2026-09-09
+
+Suite scripts/test.sh passata: nuovi test transizioni locomozione/azione, doppio salto vietato, input bloccati durante attacco/stun, interruzione attacco da hitstun, blockstun vietato durante attacco, durata esatta e nessun buffer implicito, atterraggio, inclusione di ogni campo nel checksum, KO simultaneo e reset. Rollback con ritardi 2/5/9 tick attraversa scadenza di hitstun/blockstun inizializzati nei test, attacco e KO; replay identico. Light conserva i test precedenti. Passati anche contenuti, rete sintetica, lobby/proxy e WebRTC nativo bidirezionale.
+
+Nuovo checksum replay 600 tick: e81b41d9f2632854e53dbb9bbce505af7906dff586beda609c5b901c98dee601. Gate lab-3 necessario per evitare confronto con vecchio stato lab-2. Gli stun non sono effetti della light: vengono applicati esplicitamente nei test; nessuna parata giocabile aggiunta.
+
+Build Web passata. Test browser smoke esistente passato: due Chromium, ICE connected, movimento/danno [100, 92], desync 0, disconnessione ferma la simulazione. Cross-platform browser/Linux passato, confermato 187 e desync 0; la libreria nativa ha emesso un warning di invio ICE errno=101 prima della connessione riuscita. Prove sulla stessa macchina: non validano questa revisione su dispositivi/reti fisiche differenti. Nessuna build generata inclusa in Git.
+
 Checkpoint richiesto dall'utente prima di proseguire. Nessuna nuova funzionalità aggiunta nel turno di checkpoint. Risultati ricavati dai test e dalle build già terminati; non equivalgono alla prima versione giocabile completa.
 
 ## Stato delle operazioni
