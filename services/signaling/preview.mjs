@@ -21,13 +21,13 @@ const WEBRTC_PROBE = String.raw`<script>
   function Probe(config) {
     const pc = new Native(config);
     store.installed = true; store.created = true; store.config = config;
-    const type = value => ((value || '').match(/ typ ([^ ]+)/) || [])[1] || 'other';
+    const type = candidate => candidate.type || ((candidate.candidate || '').match(/ typ ([^ ]+)/) || [])[1] || 'other';
     const sync = () => { store.iceGatheringState = pc.iceGatheringState; store.iceConnectionState = pc.iceConnectionState; store.connectionState = pc.connectionState; };
     pc.addEventListener('icegatheringstatechange', () => { sync(); log('iceGatheringState', store.iceGatheringState); });
     pc.addEventListener('iceconnectionstatechange', () => { sync(); log('iceConnectionState', store.iceConnectionState); });
     pc.addEventListener('connectionstatechange', () => { sync(); log('connectionState', store.connectionState); });
-    pc.addEventListener('icecandidate', event => log(event.candidate ? 'onicecandidate' : 'onicecandidate-end', event.candidate ? type(event.candidate.candidate) : 'complete'));
-    pc.addEventListener('icecandidateerror', event => { store.iceCandidateError = String(event.errorCode || '') + ' ' + String(event.errorText || ''); log('onicecandidateerror', store.iceCandidateError.trim()); });
+    pc.addEventListener('icecandidate', event => { if (!event.candidate) { log('onicecandidate-end', 'complete'); return; } const candidate = event.candidate.toJSON(); candidate.type = type(event.candidate); store.localCandidates = store.localCandidates || []; store.localCandidates.push(candidate); log('onicecandidate', JSON.stringify(candidate)); });
+    pc.addEventListener('icecandidateerror', event => { store.iceCandidateError = 'code=' + (event.errorCode || '') + ' text=' + (event.errorText || '') + ' url=' + (event.url || '') + ' address=' + (event.address || '') + ' port=' + (event.port || ''); log('onicecandidateerror', store.iceCandidateError); });
     sync(); log('created');
     return pc;
   }

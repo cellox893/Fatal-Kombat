@@ -25,6 +25,8 @@ var local_candidate_count: int = 0
 var remote_candidate_count: int = 0
 var local_candidate_types: Dictionary = {"host": 0, "srflx": 0, "relay": 0, "other": 0}
 var remote_candidate_types: Dictionary = {"host": 0, "srflx": 0, "relay": 0, "other": 0}
+var local_candidate_raw: Array[String] = []
+var remote_candidate_raw: Array[String] = []
 var ice_gathering_state: String = "new"
 var ice_connection_state: String = "new"
 var connection_state: String = "new"
@@ -133,9 +135,10 @@ func _handle_signal(data: Dictionary) -> void:
 			peer.session_description_created.connect(_description)
 			peer.ice_candidate_created.connect(func(mid: String, index: int, candidate: String) -> void:
 				local_candidate_count += 1
+				local_candidate_raw.append(candidate)
 				var candidate_type: String = _candidate_type(candidate)
 				local_candidate_types[candidate_type] = int(local_candidate_types.get(candidate_type, 0)) + 1
-				_log_event("ICE locale %s mline=%d" % [candidate_type, index])
+				_log_event("ICE locale %s mline=%d raw=%s" % [candidate_type, index, candidate])
 				send_signal({"type": "ice", "mid": mid, "index": index, "candidate": candidate}))
 			var config: Dictionary = {"iceServers": ice_servers}
 			if OS.has_feature("web"):
@@ -169,9 +172,11 @@ func _handle_signal(data: Dictionary) -> void:
 				_log_event("SDP remota applicata")
 		"ice":
 			remote_candidate_count += 1
-			var remote_type: String = _candidate_type(str(data.candidate))
+			var raw_candidate: String = str(data.candidate)
+			remote_candidate_raw.append(raw_candidate)
+			var remote_type: String = _candidate_type(raw_candidate)
 			remote_candidate_types[remote_type] = int(remote_candidate_types.get(remote_type, 0)) + 1
-			_log_event("ICE remoto %s" % remote_type)
+			_log_event("ICE remoto %s raw=%s" % [remote_type, raw_candidate])
 			if not remote_description:
 				pending_ice.append(data)
 				_log_event("ICE remoto accodato prima della SDP")
@@ -216,6 +221,8 @@ func _reset_webrtc_diagnostics() -> void:
 	remote_candidate_count = 0
 	local_candidate_types = {"host": 0, "srflx": 0, "relay": 0, "other": 0}
 	remote_candidate_types = {"host": 0, "srflx": 0, "relay": 0, "other": 0}
+	local_candidate_raw.clear()
+	remote_candidate_raw.clear()
 	ice_gathering_state = "new"
 	ice_connection_state = "new"
 	connection_state = "new"
