@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "commands": [{"command_id":"light_press","move_id":"light","button":8,"valid_ticks":4,"priority":0,"sequence":[],"sequence_ticks":12}],
   "arena": {
     "arena_id": "observatory",
     "left": 70,
@@ -22,6 +23,7 @@
   "fighters": [
     {
       "fighter_id": "leonidas",
+      "command_ids": ["light_press"],
       "label": "LEONIDA",
       "speed": 4,
       "jump": -16,
@@ -32,6 +34,7 @@
     },
     {
       "fighter_id": "tesla",
+      "command_ids": ["light_press"],
       "label": "NIKOLA TESLA",
       "speed": 5,
       "jump": -17,

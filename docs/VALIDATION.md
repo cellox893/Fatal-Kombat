@@ -1,5 +1,15 @@
 # Checkpoint verifiche — 2026-09-08
 
+## Fase 5 — 2026-09-10
+
+Passati scripts/test.sh, build Web e smoke Chromium: connected, input e danno [100, 92] replicati, desync 0, disconnessione gestita ed exit code 0. Browser/Linux passato, confermato 183 e desync 0; warning noto “WARNING: rtc::impl::IceTransport::LogCallback@391: juice: Send failed, errno=101” seguito da successo. Test sul Codespace, non prova fisica multi-rete. Gli smoke confermano integrazione e danno; i confini esatti del buffer sono verificati nella suite deterministica.
+
+Suite estesa: fronte, mantenimento, rilascio, consumo unico, validità [p,p+4) e recovery (pressione 16 scade, 17 sopravvive per tick 20); stun di 3/4 tick, attacco in aria, coda/storia limitate, KO a inizio/fine tick e reset. Sequenze indietro/neutro/avanti, opposti simultanei, orientamento per campione e cambio lato, confine storia, priorità/pareggi e fixture end-to-end validata.
+
+Rollback 2/5/9 tick con input remoti inizialmente predetti poi corretti: uguaglianza dell'intero stato finale, checksum e hash di ogni tick contro la simulazione puntuale. Snapshot profondi verificati su storia e pending. Golden precedente 720 tick passato con valid_ticks=1 (solo tick di pressione), distinto dal comportamento intenzionalmente nuovo. Nuovo checksum replay movimento: c03408e60c69048bee84e97cc7c5778039ff732d5c3c4ea8bccf646677918398.
+
+Validazione comandi/riferimenti, finestre 1..32, trigger bit 8, priorità e direzioni; gate test lab-4 rifiutato da stanza lab-5 e hash diversi. Dati e runtime nuovi richiedono schema 3 e compatibilità lab-5.
+
 ## Fase 4 — 2026-09-09
 
 Build Web e smoke Chromium passati: input e danno [100, 92] replicati, connected, desync 0 e disconnessione gestita. Browser/Linux passato, confermato 183 e desync 0; warning nativo già noto “WARNING: rtc::impl::IceTransport::LogCallback@391: juice: Send failed, errno=101”, seguito da esito positivo ed exit code 0. Nessuna prova aggiuntiva fra reti/dispositivi fisici. Build e dipendenze escluse da Git.

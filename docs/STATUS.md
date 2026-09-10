@@ -1,5 +1,11 @@
 # Stato corrente
 
+## Fase 5 — command buffer deterministico (2026-09-10)
+
+Light su fronte J con validità dati di 4 tick (~67 ms); pressione a fine recovery può partire al primo tick neutral. Storia limitata a 32 campioni e massimo 16 pending, inclusi nel checksum/snapshot. Nessuna ripetizione da tasto mantenuto, nessuna cancellazione anticipata; KO/reset svuotano il buffer.
+
+Sequenze orizzontali relative, priorità e pareggi preparati e verificati con fixture validate. Schema 3/lab-5: ricaricare entrambi i client. Danno, durate, geometrie e fisica light invariati. Specifica e test manuale in MOVES.md, priorità tick in STATE_TRANSITIONS.md. Fase successiva non avviata.
+
 ## Fase 4 — geometrie e registro colpi (2026-09-09)
 
 Hitbox/hurtbox intere nei dati, finestre [from,to), hurtbox base e sostituzioni durante mosse; istanze [slot,sequenza] e registro ordinato gruppo/bersaglio negli snapshot/checksum. Light equivalente sulla traccia storica di 720 tick. Gruppi multi-hit solo nei test. Diagnostica legge gli stessi rettangoli della simulazione.

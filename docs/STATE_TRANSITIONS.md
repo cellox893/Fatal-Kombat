@@ -1,5 +1,13 @@
 # Revisione fase 2 — 2026-09-09
 
+## Aggiornamento fase 5 — 2026-09-10
+
+La sezione storica sotto descrive la fase 2 senza buffer. Ora, per ciascun fighter, l'ordine è: KO da salute già zero → orientamento se neutral → campionamento storia/scadenza/riconoscimento comandi → consumo solo se già neutral → movimento/gravità/atterraggio → scadenza stun. Seguono hurtbox congelate, collisioni/danno/avanzamento mosse e KO dopo entrambi i colpi, come fase 4.
+
+ATTACK, HITSTUN e BLOCKSTUN consentono registrazione ma vietano consumo. La scadenza non rivaluta input: primo avvio al tick successivo. Default validità 4 tick [pressione,pressione+4). Quindi la vecchia affermazione “nessun buffer implicito” vale soltanto con valid_ticks=1, configurazione mantenuta nei test di regressione. AIRBORNE ammette light ma non nuovi salti durante azione bloccante.
+
+Entrare in hitstun cancella la mossa, non i comandi pendenti: continuano a scadere. KO e reset svuotano input_history e pending_commands. Danno letale a fine tick cancella anche comandi riconosciuti nello stesso tick. Compatibilità attuale lab-5/schema 3; dettagli e prova manuale in MOVES.md. Nessuna parata o hitstun applicati dai colpi.
+
 Base: e3a298ef211c3580b891ff975374c774a5fa3644. Nessun difetto delle regole rilevato nei casi esaminati; aggiunta copertura dei confini di tick e del gate versione. Light e compatibilità lab-3 invariate.
 
 ## Combinazioni a fine tick

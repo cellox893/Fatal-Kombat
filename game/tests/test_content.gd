@@ -23,7 +23,7 @@ func _initialize() -> void:
 	zero.moves[0].active = 0
 	_assert_problem(Content.validate(zero), "active")
 	assert(content.is_valid(), "default content must validate: " + "; ".join(content.errors))
-	assert(content.schema_version == 2)
+	assert(content.schema_version == 3)
 	assert(content.has_fighter("leonidas") and content.has_fighter("tesla"))
 	assert(content.move("light").move_id == "light")
 	var duplicate := _valid_data()

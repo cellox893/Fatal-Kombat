@@ -58,6 +58,7 @@ func _initialize() -> void:
 
 func _test_states() -> void:
 	var sim := Sim.new()
+	sim.content.commands.light_press.valid_ticks = 1 # Legacy no-buffer transition assertions.
 	var fighter: Dictionary = sim.state.fighters[0]
 	assert(fighter.action == Sim.Action.NEUTRAL and fighter.locomotion == Sim.Locomotion.IDLE)
 	sim.step([2, 0])

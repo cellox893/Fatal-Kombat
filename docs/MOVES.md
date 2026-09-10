@@ -1,6 +1,39 @@
-# Mosse, hitbox e hurtbox — fase 4
+# Mosse, collisioni e command buffer — fase 5
 
-Il risolutore condiviso implementa soltanto behavior_id "melee". Nessuno script dai dati e nessuna logica basata sul nome fighter. Schema contenuti 2; catalogo immutabile durante la sessione. Le mosse e i fighter sono risolti per ID stabili.
+## Comandi — 2026-09-10
+
+Schema 3, gate lab-5. Il catalogo commands associa command_id a move_id; ciascun fighter abilita command_ids. La light:
+
+```json
+{"command_id":"light_press","move_id":"light","button":8,
+ "valid_ticks":4,"priority":0,"sequence":[],"sequence_ticks":12}
+```
+
+Solo fronte 0→1 del bit 8 (J). Tenere premuto non ripete. L'avvio usa command.move_id; moves.light resta un riferimento di catalogo validato preesistente, non decide più l'avvio.
+
+Pressione p valida in [p,p+valid_ticks). Default 4: circa 66,7 ms a 60 Hz, con anticipo massimo di 3 tick (50 ms) sull'esecuzione. Scartata a p+4. valid_ticks=1 significa solo tick corrente, buffering disattivato. Finestra configurabile 1..32, breve scelta iniziale da collaudare.
+
+Un solo vincitore riconosciuto per fronte: priority maggiore, poi command_id lessicograficamente minore. Stesso ordine nel consumo dei pending; per lo stesso ID, pressione più vecchia prima. Candidati perdenti sullo stesso fronte non vengono accodati. Ogni comando consumato è rimosso; pressioni distinte possono accodare attacchi distinti, se non scadono.
+
+Cronologia: ultimi 32 campioni [tick,bits,facing]. Pending: massimo 16 coppie [command_id,tick_pressione]. Un fronte ogni due tick e validità massima 32 limitano già la coda; limite difensivo elimina il più vecchio in caso di eccesso. Scadenza prima di riconoscimento/consumo, a ogni tick vivo.
+
+sequence=[] è light semplice. Fixture [-1,0,1] indica indietro/neutro/avanti, completata da J con ultima direzione mantenuta. sequence_ticks delimita [t-sequence_ticks+1,t], inclusi entrambi gli estremi, massimo 32. Si comprimono campioni direzionali consecutivi uguali; la sequenza deve coincidere con un suffisso consecutivo, senza saltare direzioni estranee. Duplicati adiacenti nella definizione rifiutati.
+
+Direzione relativa = (destra−sinistra) × facing DEL CAMPIONE. Opposti simultanei e nessuna direzione valgono neutro. Facing registrato dopo orientamento neutral, prima del movimento; congelato durante attacco/stun. Un cambio lato non reinterpreta il passato. Una direzione mantenuta conta nei campioni della finestra anche se iniziata prima. Una nuova pressione J può riusare la sequenza ancora presente: viene consumato il token di pressione, non la storia.
+
+Non esiste input giù: questa fase prepara sequenze orizzontali, non un quarto di cerchio completo o una speciale. La fixture sequence_move è solo una copia light in memoria, caricata dal validatore.
+
+Registrazione durante ATTACK/HITSTUN/BLOCKSTUN, esecuzione solo in NEUTRAL a inizio tick. Nessuna cancellazione anticipata. AIRBORNE permette la light come prima; niente salto bufferizzato o variazioni di gravità. KO, anche da danno a fine tick, e reset cancellano storia/coda.
+
+Light a tick 0 termina dopo il 19; primo avvio successivo 20. Pressioni a 17/18/19 sopravvivono; a 16 scadono. Stun: si attende il tick successivo a quello che porta il timer a zero. Nessuna rivalutazione a fine tick.
+
+Snapshot/checksum includono input_history e pending_commands. Il consumo è rappresentato dalla rimozione, senza log illimitato. Rollback ricostruisce storia/riconoscimento/consumo dagli input corretti.
+
+Prova manuale: ricaricare entrambi i browser, stessa stanza, pronti e vicini. Premere J, rilasciare, ripremere verso fine colpo (circa 0,28–0,32 s dalla prima pressione): parte una seconda light dopo recovery. J mantenuto produce un solo attacco; seconda pressione molto precoce scade. I confini precisi sono coperti dai test, non dal timing manuale.
+
+Compatibilità corrente: lab-5 e SHA256 del catalogo comprendente commands/command_ids. Client lab-4 o hash diverso rifiutati prima della stanza. Le specifiche geometriche della fase 4 sotto restano valide.
+
+Il risolutore condiviso implementa soltanto behavior_id "melee". Nessuno script dai dati e nessuna logica basata sul nome fighter. Schema contenuti 3; catalogo immutabile durante la sessione. Le mosse e i fighter sono risolti per ID stabili.
 
 ## Definizione della light
 
@@ -61,7 +94,7 @@ Gli attacchi simultanei, anche letali, scambiano danno. Il congelamento evita ch
 
 Richiesti campi geometrici interi, dimensioni positive, ID leggibili/univoci, group_id esistenti, finestre valide e behavior noto. Valori numerici del catalogo finiti e limitati in valore assoluto a 1.000.000, oltre ai vincoli di segno del campo, per evitare overflow delle operazioni geometriche. Finestre hurtbox sovrapposte rifiutate. Un gruppo dichiarato senza finestre non causa danni.
 
-Schema 2 e gate lab-4: cambia il runtime/checksum. SHA256 dei byte JSON include tutte le geometrie, finestre e gruppi. Il server rifiuta lab-3 o hash diverso PRIMA di assegnare la stanza. Ricaricare entrambi i client; ricostruire vecchi export. Il gate confronta versioni dichiarate e non certifica integrità del codice.
+Schema 3 e gate lab-5: cambiano regole buffer e runtime/checksum. SHA256 dei byte JSON include comandi, geometrie, finestre e gruppi. Il server rifiuta lab-4 o hash diverso PRIMA di assegnare la stanza. Ricaricare entrambi i client; ricostruire vecchi export. Il gate confronta versioni dichiarate e non certifica integrità del codice.
 
 Per aggiungere un behavior futuro: ramo deterministico esplicito nel risolutore, allowlist supports, validazione parametri e test; nuovo runtime in snapshot/checksum e nuova compatibilità per regole incompatibili. Nessun percorso script dai dati.
 
@@ -71,4 +104,4 @@ Il golden di 720 tick resta 25bdfec7b19f6f648514f92903aef150b79cdc3bebcf1be07aef
 
 Test: orientamenti e bordi, finestre, sovrapposizioni e permanenza, gruppi distinti, nuove istanze, variazioni hurtbox simmetriche fra slot, cleanup, snapshot prima/dopo impatto e rollback 2/5/9 tick con uguaglianza completa dello stato/checksum. Multi-hit e variazioni hurtbox soltanto nei dati in memoria dei test.
 
-Limiti: due fighter/bersagli slot 0/1, nessun proiettile, command buffer, nuova mossa giocabile, animazione o modifica del trasporto. Simulazione indipendente da rendering e fisica Godot. La diagnostica legge gli stessi rettangoli; non decide collisioni.
+Limiti: due fighter/bersagli slot 0/1, nessun proiettile, nuova mossa giocabile, animazione o modifica del trasporto. Command buffer della light e sequenze orizzontali come descritto sopra. Simulazione indipendente da rendering e fisica Godot. La diagnostica legge gli stessi rettangoli; non decide collisioni.

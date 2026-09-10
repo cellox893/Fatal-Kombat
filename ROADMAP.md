@@ -1,5 +1,14 @@
 # Roadmap verificabile
 
+## Fase 5 — 2026-09-10
+
+- [x] Comandi nei dati con ID, mossa, validità, priorità e sequenze orizzontali.
+- [x] Buffer light 4 tick, fronte singolo, consumo una volta e scadenza limitata.
+- [x] Confini recovery/stun, KO/reset, sequenze/pareggi e rollback correttivo.
+- [x] Regressione golden con valid_ticks=1, comportamento buffer nuovo testato separatamente.
+
+Schema 3/lab-5. Restano escluse speciali, nuove animazioni, proiettili, nuovi bit di input e modifiche al trasporto. Istruzioni di collaudo in docs/MOVES.md.
+
 ## Fase 4 — 2026-09-09
 
 - [x] Rettangoli interi relativi al fighter, finestre a intervalli e variazioni hurtbox.

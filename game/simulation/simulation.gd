@@ -3,6 +3,7 @@ extends RefCounted
 ## Integer-only state. One unit = one logical pixel; velocities = units/tick.
 const Content = preload("res://content/fight_content.gd")
 const Moves = preload("res://simulation/move_resolver.gd")
+const Commands = preload("res://simulation/command_buffer.gd")
 enum Locomotion { IDLE, MOVING, AIRBORNE }
 enum Action { NEUTRAL, ATTACK, HITSTUN, BLOCKSTUN, KO }
 var content := Content.new()
@@ -33,6 +34,7 @@ func reset() -> void:
 			"resource": 100, "cooldown": 0, "effects": [], "input": 0, "facing": 1 if i == 0 else -1,
 			"move": "", "move_tick": 0, "hit": false,
 			"attack_sequence": 0, "attack_id": [], "hit_targets": [],
+			"input_history": [], "pending_commands": [],
 			"locomotion": Locomotion.IDLE, "action": Action.NEUTRAL, "stun_ticks": 0})
 
 ## Simulation-only effect entry point. Durations count subsequent blocked ticks.
@@ -56,6 +58,7 @@ func _clear_move(fighter: Dictionary) -> void:
 	Moves.clear(fighter)
 
 func _enter_ko(fighter: Dictionary) -> void:
+	Commands.clear(fighter)
 	_clear_move(fighter)
 	fighter.action = Action.KO
 	fighter.stun_ticks = 0
@@ -73,9 +76,14 @@ func step(inputs: Array) -> void:
 			var opponent: Dictionary = state.fighters[1 - i]
 			if int(opponent.x) != int(fighter.x):
 				fighter.facing = 1 if int(opponent.x) > int(fighter.x) else -1
-			if bits & 8 and not int(fighter.input) & 8:
-				Moves.begin(fighter, str(definition.moves.light), i)
-				fighter.action = Action.ATTACK
+		if int(fighter.action) != Action.KO:
+			var commands: Array = content.fighter_commands(characters[i])
+			Commands.record(fighter, bits, int(state.tick), commands)
+			if int(fighter.action) == Action.NEUTRAL:
+				var move_id: String = Commands.consume(fighter, commands)
+				if not move_id.is_empty():
+					Moves.begin(fighter, move_id, i)
+					fighter.action = Action.ATTACK
 		var axis: int = int(bool(bits & 2)) - int(bool(bits & 1))
 		if int(fighter.action) != Action.NEUTRAL:
 			axis = 0
@@ -130,8 +138,9 @@ func checksum() -> String:
 		canonical.append([fighter.x, fighter.y, fighter.vy, fighter.health,
 			fighter.resource, fighter.cooldown, fighter.effects, fighter.input, fighter.facing, fighter.move, fighter.move_tick, fighter.hit,
 			fighter.locomotion, fighter.action, fighter.stun_ticks,
-			fighter.attack_sequence, fighter.attack_id, fighter.hit_targets])
+			fighter.attack_sequence, fighter.attack_id, fighter.hit_targets,
+			fighter.input_history, fighter.pending_commands])
 	return JSON.stringify(canonical).sha256_text()
 
 static func compatibility() -> String:
-	return "lab-4:" + Content.new().raw_json.sha256_text()
+	return "lab-5:" + Content.new().raw_json.sha256_text()

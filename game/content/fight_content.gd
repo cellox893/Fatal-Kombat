@@ -3,13 +3,14 @@ extends RefCounted
 ## Validated, versioned combat content. The simulation consumes only stable IDs.
 
 const CONTENT_PATH := "res://content/fighters.json"
-const SCHEMA_VERSION := 2
+const SCHEMA_VERSION := 3
 const Resolver = preload("res://simulation/move_resolver.gd")
 
 var schema_version: int = 0
 var arena: Dictionary = {}
 var fighters: Dictionary = {}
 var moves: Dictionary = {}
+var commands: Dictionary = {}
 var default_fighters: Array[String] = []
 var errors: Array[String] = []
 var raw_json: String = ""
@@ -51,6 +52,39 @@ static func validate(data: Dictionary) -> Array[String]:
 			_validate_positive_integer(move, "recovery", path, problems, true)
 			_validate_positive_integer(move, "damage", path, problems)
 			_validate_move_boxes(move, path, problems)
+	var command_ids: Dictionary = {}
+	if not data.get("commands") is Array or data.commands.is_empty():
+		problems.append("commands: non-empty array required")
+	else:
+		for command: Variant in data.commands:
+			if not command is Dictionary:
+				problems.append("commands: object required")
+				continue
+			var id: Variant = command.get("command_id")
+			if not id is String or not _valid_id(str(id)) or command_ids.has(id):
+				problems.append("command_id: missing, invalid or duplicate")
+			else:
+				command_ids[id] = true
+			if not command.get("move_id") is String or not move_ids.has(command.get("move_id")):
+				problems.append("command.move_id: unknown move")
+			if not _is_integer(command.get("button")) or int(command.get("button")) != 8:
+				problems.append("command.button: only attack bit 8 supported")
+			for field: String in ["valid_ticks", "sequence_ticks"]:
+				if not _is_integer(command.get(field)) or int(command.get(field)) < 1 or int(command.get(field)) > 32:
+					problems.append("command." + field + ": integer 1..32 required")
+			if not _is_integer(command.get("priority")) or int(command.get("priority")) < 0:
+				problems.append("command.priority: non-negative integer required")
+			if not command.get("sequence") is Array or command.sequence.size() > 32:
+				problems.append("command.sequence: array up to 32 directions required")
+			else:
+				for index in range(command.sequence.size()):
+					var direction: Variant = command.sequence[index]
+					if not _is_integer(direction) or int(direction) not in [-1, 0, 1]:
+						problems.append("command.sequence: directions must be -1, 0, 1")
+					elif index > 0 and direction == command.sequence[index - 1]:
+						problems.append("command.sequence: repeated consecutive direction")
+				if _is_integer(command.get("sequence_ticks")) and command.sequence.size() > int(command.sequence_ticks):
+					problems.append("command.sequence: cannot fit in sequence_ticks")
 	var fighter_ids: Dictionary = {}
 	if not data.get("fighters") is Array or data.fighters.size() < 2:
 		problems.append("fighters: array with at least two fighters required")
@@ -77,6 +111,15 @@ static func validate(data: Dictionary) -> Array[String]:
 				problems.append(path + ".jump: must be negative")
 			_validate_positive_integer(fighter, "health", path, problems)
 			_validate_boxes(fighter.get("hurtboxes"), path + ".hurtboxes", problems)
+			if not fighter.get("command_ids") is Array or fighter.command_ids.is_empty():
+				problems.append(path + ".command_ids: non-empty array required")
+			else:
+				var assigned: Dictionary = {}
+				for id: Variant in fighter.command_ids:
+					if not id is String or not command_ids.has(id) or assigned.has(id):
+						problems.append(path + ".command_ids: unknown or duplicate command")
+					else:
+						assigned[id] = true
 			if not _valid_color(str(fighter.get("color", ""))):
 				problems.append(path + ".color: six hexadecimal digits required")
 			if not fighter.get("moves") is Dictionary or not fighter.moves.has("light"):
@@ -107,6 +150,12 @@ func fighter(fighter_id: String) -> Dictionary:
 func move(move_id: String) -> Dictionary:
 	return moves.get(move_id, {})
 
+func fighter_commands(fighter_id: String) -> Array:
+	var result: Array = []
+	for id: String in fighters[fighter_id].command_ids:
+		result.append(commands[id])
+	return result
+
 func _load(data: Dictionary) -> void:
 	errors = validate(data)
 	if not errors.is_empty():
@@ -116,6 +165,8 @@ func _load(data: Dictionary) -> void:
 	arena = data.arena.duplicate(true)
 	for source: Dictionary in data.moves:
 		moves[str(source.move_id)] = source.duplicate(true)
+	for source: Dictionary in data.commands:
+		commands[str(source.command_id)] = source.duplicate(true)
 	for source: Dictionary in data.fighters:
 		fighters[str(source.fighter_id)] = source.duplicate(true)
 	for fighter_id: Variant in data.default_fighters:

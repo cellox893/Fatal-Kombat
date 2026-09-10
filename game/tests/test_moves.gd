@@ -9,6 +9,7 @@ func _initialize() -> void:
 	var trace := ""
 	for scenario in range(4):
 		var sim := Sim.new()
+		sim.content.commands.light_press.valid_ticks = 1 # Current tick only: buffering disabled.
 		sim.state.fighters[1].x = 360 if scenario != 2 else 820
 		if scenario == 3:
 			sim.state.fighters[0].health = 8
@@ -53,6 +54,7 @@ func _test_definitions() -> void:
 		"hit_groups": ["strike"], "hitboxes": [{"box_id":"fist","group_id":"strike","from":2,"to":3,"x":0,"y":-120,"width":150,"height":110}], "hurtbox_windows": []})
 	data.fighters[0].moves.light = "test_strike"
 	data.fighters[1].moves.light = "test_strike"
+	data.commands[0].move_id = "test_strike"
 	assert(Content.validate(data).is_empty())
 	var sim := Sim.new()
 	sim.content = Content.new(data)
